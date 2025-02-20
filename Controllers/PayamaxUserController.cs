@@ -4,9 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace api.Controllers;
 
-[ApiController()]
+[ApiController]
+[Route("/payamax/all/")]
 public class PayamaxUserController : ControllerBase{
-    [HttpPost("api/payamax/user/upload")]
+    [HttpPost("upload")]
     public UploadPayamakOutput UploadPayamak(UploadPayamakInput input)
     {
         throw new System.NotImplementedException();
