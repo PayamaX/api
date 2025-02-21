@@ -11,7 +11,7 @@ public record ExpectedPayamakProcessResult(
 
 public record Payamak(PayamakOrigin Origin, string? BodyText, string BodyHash, long ReceivedEpochMillis);
 
-public record PayamakRuleProcessResult(string Id, double? Rating, string Comment);
+public record PayamakRuleProcessResult(string Id, double? Rating, string Comment, object Details);
 
 public enum PayamakUsabilityClass
 {
