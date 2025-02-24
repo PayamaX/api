@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - API-1
 
 jobs:
   build:
