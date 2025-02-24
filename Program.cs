@@ -1,3 +1,5 @@
+using No1.Portal.Configs;
+
 namespace api;
 
 public class Program
@@ -7,6 +9,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+        builder.Services.Configure<ConnectionString>(builder.Configuration.GetSection("ConnectionString"));
 
         builder.Services.AddControllers();
         var app = builder.Build();
