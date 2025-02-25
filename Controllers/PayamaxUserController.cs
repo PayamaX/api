@@ -1,6 +1,8 @@
 
+using api.Model;
 using api.UseCases.UploadPayamak;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using No1.Portal.Configs;
 
 namespace api.Controllers;
@@ -9,16 +11,17 @@ namespace api.Controllers;
 [Route("/payamax/all/")]
 public class PayamaxUserController : ControllerBase{
     
-    private readonly ConnectionString connectionString;
+    private readonly PayamaxContext payamaxContext;
 
-    public PayamaxUserController(ConnectionString connectionString)
+    public PayamaxUserController(PayamaxContext payamaxContext)
     {
-        this.connectionString = connectionString;
+        this.payamaxContext = payamaxContext;
     }
 
     [HttpPost("upload")]
     public UploadPayamakOutput UploadPayamak(UploadPayamakInput input)
     {
+        var count = payamaxContext.Payamaks.Count();
         throw new System.NotImplementedException();
     }
 }

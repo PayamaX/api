@@ -2,10 +2,8 @@
 
 namespace api.Model;
 
-public class PayamaxContext : DbContext
+public class PayamaxContext(DbContextOptions<PayamaxContext> options) : DbContext(options)
 {
     public required DbSet<PayamakExpectedProcessResultEntity> Payamaks { get; set; }
     public required DbSet<PayamakRuleProcessResultEntity> ProcessResults { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.UseNpgsql(@"Host");
 }
