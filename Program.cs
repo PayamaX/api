@@ -2,7 +2,7 @@ using FluentNHibernate.Automapping;
 using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
 using NHibernate.Tool.hbm2ddl;
-using No1.NET.Configs;
+using No1.Portal.Configs;
 using PayamaX.Portal.Config.NHibernateFluentAutoMap;
 using PayamaX.Portal.Contracts;
 using PayamaX.Portal.Model;
