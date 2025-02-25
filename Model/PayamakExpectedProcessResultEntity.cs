@@ -1,15 +1,18 @@
-﻿using api.Commons;
-using api.UseCases.UploadPayamak;
+﻿using System.ComponentModel.DataAnnotations;
+using PayamaX.Portal.Commons;
+using PayamaX.Portal.UseCases.UploadPayamak;
 
-namespace api.Model;
+namespace PayamaX.Portal.Model;
 
 public class PayamakExpectedProcessResultEntity
 {
-    public int Id { get; set; }
-    public required PayamakOrigin Origin { get; set; }
-    public string? BodyText { get; set; }
-    public string BodyHash { get; set; }
-    public long ReceivedEpochMillis { get; set; }
-    public PayamakUsabilityClass DetectedUsabilityClass{ get; set; }
-    public PayamakUsabilityClass ExpectedUsabilityClass{ get; set; }
+    public virtual int Id { get; set; }
+    public virtual required PayamakOriginComponent Origin { get; set; }
+    
+    [StringLength(4001)]
+    public virtual string? BodyText { get; set; }
+    public virtual required string BodyHash { get; set; }
+    public virtual long ReceivedEpochMillis { get; set; }
+    public virtual PayamakUsabilityClass DetectedUsabilityClass{ get; set; }
+    public virtual PayamakUsabilityClass ExpectedUsabilityClass{ get; set; }
 }

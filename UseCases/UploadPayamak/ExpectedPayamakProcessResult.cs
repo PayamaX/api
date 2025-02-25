@@ -1,6 +1,6 @@
-using api.Commons;
+using PayamaX.Portal.Commons;
 
-namespace api.UseCases.UploadPayamak;
+namespace PayamaX.Portal.UseCases.UploadPayamak;
 
 public record ExpectedPayamakProcessResult(
     Payamak Payamak,
@@ -9,7 +9,7 @@ public record ExpectedPayamakProcessResult(
     List<PayamakRuleProcessResult> PayamakRuleProcessResults
     );
 
-public record Payamak(PayamakOrigin Origin, string? BodyText, string BodyHash, long ReceivedEpochMillis);
+public record Payamak(PayamakOriginComponent Origin, string? BodyText, string BodyHash, long ReceivedEpochMillis);
 
 public record PayamakRuleProcessResult(string Id, double? Rating, string Comment, object Details);
 

@@ -7,7 +7,12 @@
       "launchBrowser": false,
       "applicationUrl": "http://localhost:5260",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnectionString__Host": "localhost",
+        "ConnectionString__Port": 15432,
+        "ConnectionString__Username": "px",
+        "ConnectionString__Database": "px",
+        "ConnectionString__Password": "px"
       }
     },
     "https": {

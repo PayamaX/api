@@ -1,27 +1,24 @@
-
-using api.Model;
-using api.UseCases.UploadPayamak;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using No1.Portal.Configs;
+using PayamaX.Portal.Contracts;
+using PayamaX.Portal.UseCases.UploadPayamak;
 
-namespace api.Controllers;
+namespace PayamaX.Portal.Controllers;
 
 [ApiController]
 [Route("/payamax/all/")]
-public class PayamaxUserController : ControllerBase{
-    
-    private readonly PayamaxContext payamaxContext;
+public class PayamaxUserController : ControllerBase
+{
+    private readonly PayamaksContract payamaksContract;
 
-    public PayamaxUserController(PayamaxContext payamaxContext)
+    public PayamaxUserController(PayamaksContract payamaksContract)
     {
-        this.payamaxContext = payamaxContext;
+        this.payamaksContract = payamaksContract;
     }
 
     [HttpPost("upload")]
-    public UploadPayamakOutput UploadPayamak(UploadPayamakInput input)
+    public Task<UploadPayamakOutput> UploadPayamak(UploadPayamakInput input,
+        CancellationToken cancellationToken = default)
     {
-        var count = payamaxContext.Payamaks.Count();
-        throw new System.NotImplementedException();
+        return payamaksContract.Upload(input, cancellationToken);
     }
 }
