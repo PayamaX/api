@@ -1,4 +1,4 @@
-name: Build application
+name: Use Private NuGet Package
 
 on:
   workflow_dispatch:

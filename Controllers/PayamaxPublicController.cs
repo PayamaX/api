@@ -5,16 +5,9 @@ using PayamaX.Portal.UseCases.UploadPayamak;
 namespace PayamaX.Portal.Controllers;
 
 [ApiController]
-[Route("/payamax/all/")]
-public class PayamaxUserController : ControllerBase
+[Route("/payamax/pub/")]
+public class PayamaxPublicController(IPayamaksContract payamaksContract) : ControllerBase
 {
-    private readonly PayamaksContract payamaksContract;
-
-    public PayamaxUserController(PayamaksContract payamaksContract)
-    {
-        this.payamaksContract = payamaksContract;
-    }
-
     [HttpPost("upload")]
     public Task<UploadPayamakOutput> UploadPayamak(UploadPayamakInput input,
         CancellationToken cancellationToken = default)

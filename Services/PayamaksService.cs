@@ -5,7 +5,7 @@ using PayamaX.Portal.Utility;
 
 namespace PayamaX.Portal.Services;
 
-public class PayamaksService(PayamaxRepo repo) : PayamaksContract
+public class PayamaksService(PayamaxRepo repo) : IPayamaksContract
 {
     private readonly PayamaxRepo Repo = repo;
 
@@ -25,6 +25,11 @@ public class PayamaksService(PayamaxRepo repo) : PayamaksContract
             .ToList();
         await Repo.Persist(entities, cancellationToken);
         return new UploadPayamakOutput();
+    }
+
+    public Task<IList<ExpectedPayamakProcessResult>> List(CancellationToken cancellationToken)
+    {
+        return Repo.List(cancellationToken);
     }
 
     private string CalculateHash(string? text)

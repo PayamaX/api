@@ -15,7 +15,7 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.Services.AddScoped<PayamaksContract, PayamaksService>();
+        builder.Services.AddScoped<IPayamaksContract, PayamaksService>();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.Configure<ConnectionString>(builder.Configuration.GetSection("ConnectionString"));

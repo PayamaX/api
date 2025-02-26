@@ -1,16 +1,11 @@
+using System.Collections;
 using NHibernate.Criterion;
+using PayamaX.Portal.UseCases.UploadPayamak;
 
 namespace PayamaX.Portal.Model;
 
-public class PayamaxRepo
+public class PayamaxRepo(NHibernate.ISession session)
 {
-    private readonly NHibernate.ISession session;
-
-    public PayamaxRepo(NHibernate.ISession session)
-    {
-        this.session = session;
-    }
-
     public async Task<int> PayamaksCount()
     {
         return await session.CreateCriteria<PayamakExpectedProcessResultEntity>().SetProjection(Projections.RowCount())
@@ -20,5 +15,10 @@ public class PayamaxRepo
     public Task Persist(IEnumerable<PayamakExpectedProcessResultEntity> entities, CancellationToken cancellationToken)
     {
         return Task.WhenAll(entities.Select(entity => session.SaveOrUpdateAsync(entity, cancellationToken)));
+    }
+
+    public Task<IList<ExpectedPayamakProcessResult>> List(CancellationToken cancellationToken)
+    {
+        return session.CreateCriteria<ExpectedPayamakProcessResult>().ListAsync<ExpectedPayamakProcessResult>(cancellationToken);
     }
 }

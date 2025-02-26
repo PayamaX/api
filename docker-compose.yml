@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  pg:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: px
+      POSTGRES_PASSWORD: px
+      POSTGRES_DB: px
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./.data/pgdb:/var/lib/postgresql/data
+
+  px:
+    image: localhost/payamax.portal:latest
+    restart: always
+    depends_on:
+      - pg
+    environment:
+      ConnectionString__Host: pg
+      ConnectionString__Port: 5432
+      ConnectionString__Username: px
+      ConnectionString__Database: px
+      ConnectionString__Password: px
+    ports:
+      - "5260:8080"
