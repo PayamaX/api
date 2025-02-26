@@ -34,9 +34,10 @@ jobs:
 
       - name: Publish 
         run: |
-          docker build -f Dockerfile.built -t ghcr.io/payamax/api:latest .
+          declare -l tag="ghcr.io/$GITHUB_REPOSITORY:latest"
+          docker build -f Dockerfile.built -t $tag .
           echo ${{ secrets.PAYAMAX_PAT }} | docker login ghcr.io -u ${{ vars.PAYAMAX_USR }} --password-stdin
-          docker push ghcr.io/$GITHUB_REPOSITORY:latest
+          docker push $tag
         env:
           ENV_GITHUB_USR: ${{ vars.PAYAMAX_USR }}
           ENV_GITHUB_PAT: ${{ secrets.PAYAMAX_PAT }}
