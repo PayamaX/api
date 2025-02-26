@@ -3,9 +3,8 @@ name: Build application
 on:
   workflow_dispatch:
   push:
-    branches:
+    branches-ignore:
       - main
-      - API-1
 
 jobs:
   build:
@@ -24,7 +23,7 @@ jobs:
 
       - name: Add GitHub Packages Source
         run: |
-          dotnet nuget add source --username behzadian --password ${{ secrets.HBN_PAT }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Farayan/index.json"
+          dotnet nuget add source --username ${{ vars.FARAYAN_USR }} --password ${{ secrets.FARAYAN_PAT }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Farayan/index.json"
 
       - name: Restore Dependencies
         run: dotnet restore
