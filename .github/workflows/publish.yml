@@ -1,4 +1,4 @@
-name: Use Private NuGet Package
+name: Publish api in docker registry
 
 on:
   workflow_dispatch:
@@ -34,7 +34,7 @@ jobs:
 
       - name: Publish 
         run: |
-          docker build -f Dockerfile.built -t ghcr.io/$GITHUB_REPOSITORY:latest .
+          docker build -f Dockerfile.built -t ghcr.io/payamax/api:latest .
           echo ${{ secrets.PAYAMAX_PAT }} | docker login ghcr.io -u ${{ vars.PAYAMAX_USR }} --password-stdin
           docker push ghcr.io/$GITHUB_REPOSITORY:latest
         env:
