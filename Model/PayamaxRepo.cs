@@ -17,8 +17,8 @@ public class PayamaxRepo(NHibernate.ISession session)
         return Task.WhenAll(entities.Select(entity => session.SaveOrUpdateAsync(entity, cancellationToken)));
     }
 
-    public Task<IList<ExpectedPayamakProcessResult>> List(CancellationToken cancellationToken)
+    public Task<IList<PayamakExpectedProcessResultEntity>> List(CancellationToken cancellationToken)
     {
-        return session.CreateCriteria<ExpectedPayamakProcessResult>().ListAsync<ExpectedPayamakProcessResult>(cancellationToken);
+        return session.CreateCriteria<PayamakExpectedProcessResultEntity>().ListAsync<PayamakExpectedProcessResultEntity>(cancellationToken);
     }
 }
