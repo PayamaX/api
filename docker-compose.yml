@@ -11,7 +11,7 @@ services:
     ports:
       - "15432:5432"
     volumes:
-      - ./.data/pgdb:/var/lib/postgresql/data
+      - ./-data/pgdb:/var/lib/postgresql/data
 
   px:
     image: localhost/payamax.portal:latest
