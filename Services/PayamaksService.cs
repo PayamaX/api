@@ -27,9 +27,11 @@ public class PayamaksService(PayamaxRepo repo) : IPayamaksContract
         return new UploadPayamakOutput();
     }
 
-    public Task<IList<ExpectedPayamakProcessResultPortable>> List(CancellationToken cancellationToken)
+    public Task<IList<PayamakExpectedProcessResultPortable>> List(CancellationToken cancellationToken)
     {
-        Repo.List(cancellationToken).re
+        var list = Repo.List(cancellationToken).Result;
+        var portables = list.Select(x => x.Portable());
+        return Task.FromResult<IList<PayamakExpectedProcessResultPortable>>(portables.ToList());
     }
 
     private string CalculateHash(string? text)

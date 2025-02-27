@@ -15,4 +15,9 @@ public class PayamakExpectedProcessResultEntity
     public virtual long ReceivedEpochMillis { get; set; }
     public virtual PayamakUsabilityClass DetectedUsabilityClass{ get; set; }
     public virtual PayamakUsabilityClass ExpectedUsabilityClass{ get; set; }
+
+    public virtual PayamakExpectedProcessResultPortable Portable()
+    {
+        throw new NotImplementedException();
+    }
 }

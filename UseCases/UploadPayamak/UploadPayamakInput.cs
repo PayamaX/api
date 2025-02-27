@@ -1,3 +1,3 @@
 namespace PayamaX.Portal.UseCases.UploadPayamak;
 
-public record UploadPayamakInput(ExpectedPayamakProcessResultPortable[] PayamakProcessResults);
+public record UploadPayamakInput(PayamakExpectedProcessResultPortable[] PayamakProcessResults);
