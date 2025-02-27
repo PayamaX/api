@@ -2,7 +2,7 @@ using PayamaX.Portal.Commons;
 
 namespace PayamaX.Portal.UseCases.UploadPayamak;
 
-public record ExpectedPayamakProcessResult(
+public record ExpectedPayamakProcessResultPortable(
     Payamak Payamak,
     PayamakUsabilityClass DetectedUsabilityClass,
     PayamakUsabilityClass ExpectedUsabilityClass,

@@ -9,7 +9,7 @@ namespace PayamaX.Portal.Controllers;
 public class PayamaxManagerController(IPayamaksContract payamaksContract) : ControllerBase
 {
     [HttpPost("download")]
-    public Task<IList<ExpectedPayamakProcessResult>> DownloadPayamaks(CancellationToken cancellationToken = default)
+    public Task<IList<ExpectedPayamakProcessResultPortable>> DownloadPayamaks(CancellationToken cancellationToken = default)
     {
         return payamaksContract.List(cancellationToken);
     }
