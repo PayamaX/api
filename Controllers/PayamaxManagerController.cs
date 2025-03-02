@@ -6,6 +6,7 @@ namespace PayamaX.Portal.Controllers;
 
 [ApiController]
 [Route("/payamax/manager/")]
+[ApiExplorerSettings(GroupName = "manager")]
 public class PayamaxManagerController(IPayamaksContract payamaksContract) : ControllerBase
 {
     [HttpPost("download")]

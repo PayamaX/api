@@ -1,6 +1,7 @@
 using FluentNHibernate.Automapping;
 using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
+using Microsoft.OpenApi.Models;
 using NHibernate.Tool.hbm2ddl;
 using No1.Portal.Configs;
 using PayamaX.Portal.Config.NHibernateFluentAutoMap;
@@ -37,13 +38,22 @@ public class Program
             .BuildSessionFactory();
         builder.Services.AddScoped<NHibernate.ISession>(_ => sessionFactory.OpenSession());
         builder.Services.AddScoped<PayamaxRepo>();
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("public", new OpenApiInfo { Title = "PayamaX Public API", Version = "public" });
+            c.SwaggerDoc("manager", new OpenApiInfo { Title = "PayamaX Manager API", Version = "manager" });
+        });
 
         var app = builder.Build();
 
         app.UseHttpsRedirection();
         app.MapControllers();
         app.UseSwagger();
-        app.UseSwaggerUI();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("public/swagger.json", "PayamaX Public API");
+            c.SwaggerEndpoint("manager/swagger.json", "PayamaX Manager API");
+        });
 
         app.Run();
     }

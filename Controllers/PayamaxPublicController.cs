@@ -5,7 +5,8 @@ using PayamaX.Portal.UseCases.UploadPayamak;
 namespace PayamaX.Portal.Controllers;
 
 [ApiController]
-[Route("/payamax/pub/")]
+[Route("/payamax/public/")]
+[ApiExplorerSettings(GroupName = "public")]
 public class PayamaxPublicController(IPayamaksContract payamaksContract) : ControllerBase
 {
     [HttpPost("upload")]
