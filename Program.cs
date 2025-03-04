@@ -1,10 +1,14 @@
 using FluentNHibernate.Automapping;
 using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using NHibernate.Tool.hbm2ddl;
 using No1.Portal.Configs;
+using PayamaX.Portal.Config;
 using PayamaX.Portal.Config.NHibernateFluentAutoMap;
+using PayamaX.Portal.Contexts;
 using PayamaX.Portal.Contracts;
 using PayamaX.Portal.Model;
 using PayamaX.Portal.Services;
@@ -40,17 +44,25 @@ public class Program
         builder.Services.AddScoped<PayamaxRepo>();
         builder.Services.AddSwaggerGen(c =>
         {
+            c.DocumentFilter<IdentityDocumentFilter>();
+            c.SwaggerDoc("identity", new OpenApiInfo { Title = "PayamaX Identity API", Version = "identity" });
             c.SwaggerDoc("public", new OpenApiInfo { Title = "PayamaX Public API", Version = "public" });
             c.SwaggerDoc("manager", new OpenApiInfo { Title = "PayamaX Manager API", Version = "manager" });
         });
+        builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase("AppDb"));
+        builder.Services.AddAuthorization();
+        builder.Services.AddIdentityApiEndpoints<IdentityUser>().AddEntityFrameworkStores<ApplicationDbContext>();
 
         var app = builder.Build();
 
+        app.MapGroup("/identity").MapIdentityApi<IdentityUser>();
         app.UseHttpsRedirection();
         app.MapControllers();
+        //app.MapSwagger().RequireAuthorization();
         app.UseSwagger();
         app.UseSwaggerUI(c =>
         {
+            c.SwaggerEndpoint("identity/swagger.json", "PayamaX Identity API");
             c.SwaggerEndpoint("public/swagger.json", "PayamaX Public API");
             c.SwaggerEndpoint("manager/swagger.json", "PayamaX Manager API");
         });

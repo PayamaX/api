@@ -12,7 +12,9 @@
 
   <ItemGroup>
     <PackageReference Include="FluentNHibernate" Version="3.4.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.2" />
     <PackageReference Include="NHibernate" Version="5.5.2" />
     <PackageReference Include="No1.Portal" Version="1.0.*" />
     <PackageReference Include="Npgsql" Version="9.0.3" />
