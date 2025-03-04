@@ -1,0 +1,29 @@
+# Use the official .NET SDK image
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+# Set working directory inside the container
+WORKDIR /app
+
+# Copy the source code
+COPY . .
+
+# Add the NuGet source (assuming it's mounted at /nuget on build)
+RUN dotnet nuget add source /nuget --name local-nuget
+
+# Restore dependencies using the local NuGet source
+RUN dotnet restore
+
+# Build the application
+RUN dotnet build --configuration Release --no-restore
+
+# Publish the application
+RUN dotnet publish -c Release -o /app/publish
+
+# Use the official runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+
+# Expose the application port
+EXPOSE 80
+ENTRYPOINT ["dotnet", "PayamaX.Portal.dll"]
