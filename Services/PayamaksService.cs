@@ -5,12 +5,21 @@ using PayamaX.Portal.Utility;
 
 namespace PayamaX.Portal.Services;
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="repo"></param>
 public class PayamaksService(PayamaxRepo repo) : IPayamaksContract
 {
-    private readonly PayamaxRepo Repo = repo;
-
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<UploadPayamakOutput> Upload(UploadPayamakInput input, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(input);
         var entities = input.PayamakProcessResults.Select(payamakInput => new PayamakExpectedProcessResultEntity()
             {
                 BodyHash = payamakInput.Payamak.BodyText.IsUsable()
@@ -23,18 +32,23 @@ public class PayamaksService(PayamaxRepo repo) : IPayamaksContract
                 ReceivedEpochMillis = payamakInput.Payamak.ReceivedEpochMillis,
             })
             .ToList();
-        await Repo.Persist(entities, cancellationToken);
+        await repo.Persist(entities, cancellationToken).ConfigureAwait(false);
         return new UploadPayamakOutput();
     }
 
-    public Task<IList<PayamakExpectedProcessResultPortable>> List(CancellationToken cancellationToken)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<IList<PayamakExpectedProcessResultPortable>> List(CancellationToken cancellationToken = default)
     {
-        var list = Repo.List(cancellationToken).Result;
+        var list = await repo.List(cancellationToken).ConfigureAwait(false);
         var portables = list.Select(x => x.Portable());
-        return Task.FromResult<IList<PayamakExpectedProcessResultPortable>>(portables.ToList());
+        return portables.ToList();
     }
 
-    private string CalculateHash(string? text)
+    private static string CalculateHash(string? text)
     {
         return "Uncalced";
     }

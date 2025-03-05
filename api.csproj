@@ -9,6 +9,9 @@
     <AssemblyName>PayamaX.Portal</AssemblyName>
     <RootNamespace>PayamaX.Portal</RootNamespace>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <AnalysisMode>All</AnalysisMode>
+    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+    <NoWarn>CA1515;CA1848;CA2201;CA1052</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

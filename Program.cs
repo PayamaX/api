@@ -16,8 +16,16 @@ using PayamaX.Portal.Services;
 
 namespace PayamaX.Portal;
 
+/// <summary>
+/// 
+/// </summary>
 public class Program
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="args"></param>
+    /// <exception cref="Exception"></exception>
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
@@ -29,7 +37,8 @@ public class Program
             (builder.Configuration.GetSection("ConnectionString") ??
              throw new Exception("ConnectionString section can not be found")).Get<ConnectionString>() ??
             throw new Exception("ConnectionString can't be converted to a connection string");
-        var csStr = $"User ID={csObj.Username};Password={csObj.Password};Host={csObj.Host};Port={csObj.Port};Database={csObj.Database};";
+        var csStr =
+            $"User ID={csObj.Username};Password={csObj.Password};Host={csObj.Host};Port={csObj.Port};Database={csObj.Database};";
         builder.Services.AddControllers();
 
         var payamaxNhFluentAutoConfig = new PayamaxConfig();
@@ -66,6 +75,9 @@ public class Program
 
         var app = builder.Build();
 
+        using var scope = app.Services.CreateScope();
+        using var context = scope.ServiceProvider.GetService<ApplicationDbContext>()!;
+        context.Database.Migrate();
         app.MapGroup("/identity").MapIdentityApi<IdentityUser>();
         app.UseHttpsRedirection();
         app.MapControllers();

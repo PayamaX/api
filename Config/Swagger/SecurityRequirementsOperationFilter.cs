@@ -16,6 +16,8 @@ public class SecurityRequirementsOperationFilter : IOperationFilter
     /// <param name="context"></param>
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
+        ArgumentNullException.ThrowIfNull(operation);
+        ArgumentNullException.ThrowIfNull(context);
         // Policy names map to scopes
         var requiredScopes = context.MethodInfo
             .GetCustomAttributes(true)

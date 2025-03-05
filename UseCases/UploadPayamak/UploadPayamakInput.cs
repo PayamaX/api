@@ -1,3 +1,9 @@
+using System.Collections.ObjectModel;
+
 namespace PayamaX.Portal.UseCases.UploadPayamak;
 
-public record UploadPayamakInput(PayamakExpectedProcessResultPortable[] PayamakProcessResults);
+/// <summary>
+/// 
+/// </summary>
+/// <param name="PayamakProcessResults"></param>
+public record UploadPayamakInput(ReadOnlyCollection<PayamakExpectedProcessResultPortable> PayamakProcessResults);
