@@ -8,7 +8,7 @@ namespace PayamaX.Portal.Controllers;
 [ApiController]
 [Route("/payamax/manager/")]
 [ApiExplorerSettings(GroupName = "manager")]
-[Authorize]
+[Authorize("bearer")]
 public class PayamaxManagerController(IPayamaksContract payamaksContract) : ControllerBase
 {
     [HttpPost("download")]

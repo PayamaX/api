@@ -8,6 +8,7 @@ using NHibernate.Tool.hbm2ddl;
 using No1.Portal.Configs;
 using PayamaX.Portal.Config;
 using PayamaX.Portal.Config.NHibernateFluentAutoMap;
+using PayamaX.Portal.Config.Swagger;
 using PayamaX.Portal.Contexts;
 using PayamaX.Portal.Contracts;
 using PayamaX.Portal.Model;
@@ -24,10 +25,11 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.Configure<ConnectionString>(builder.Configuration.GetSection("ConnectionString"));
-        var cs =
+        var csObj =
             (builder.Configuration.GetSection("ConnectionString") ??
              throw new Exception("ConnectionString section can not be found")).Get<ConnectionString>() ??
             throw new Exception("ConnectionString can't be converted to a connection string");
+        var csStr = $"User ID={csObj.Username};Password={csObj.Password};Host={csObj.Host};Port={csObj.Port};Database={csObj.Database};";
         builder.Services.AddControllers();
 
         var payamaxNhFluentAutoConfig = new PayamaxConfig();
@@ -35,8 +37,7 @@ public class Program
         autoPersistenceModel.Conventions.Add(new PayamaxConventions());
         autoPersistenceModel.Conventions.Add(new StringLengthConvention());
         var sessionFactory = Fluently.Configure()
-            .Database(() => PostgreSQLConfiguration.Standard.ConnectionString(
-                $"User ID={cs.Username};Password={cs.Password};Host={cs.Host};Port={cs.Port};Database={cs.Database};"))
+            .Database(() => PostgreSQLConfiguration.Standard.ConnectionString(csStr))
             .Mappings(m => m.AutoMappings.Add(autoPersistenceModel))
             .ExposeConfiguration(cfg => new SchemaUpdate(cfg).Execute(true, true))
             .BuildSessionFactory();
@@ -44,12 +45,22 @@ public class Program
         builder.Services.AddScoped<PayamaxRepo>();
         builder.Services.AddSwaggerGen(c =>
         {
+            c.AddSecurityDefinition("bearerAuth", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "JWT Authorization header using the Bearer scheme."
+            });
+
             c.DocumentFilter<IdentityDocumentFilter>();
+            c.OperationFilter<SecurityRequirementsOperationFilter>();
+            c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "PayamaX.Portal.xml"));
             c.SwaggerDoc("identity", new OpenApiInfo { Title = "PayamaX Identity API", Version = "identity" });
             c.SwaggerDoc("public", new OpenApiInfo { Title = "PayamaX Public API", Version = "public" });
             c.SwaggerDoc("manager", new OpenApiInfo { Title = "PayamaX Manager API", Version = "manager" });
         });
-        builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase("AppDb"));
+        builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(csStr));
         builder.Services.AddAuthorization();
         builder.Services.AddIdentityApiEndpoints<IdentityUser>().AddEntityFrameworkStores<ApplicationDbContext>();
 
