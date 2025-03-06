@@ -21,7 +21,7 @@ public class PayamaxManagerController(IPayamaksContract payamaksContract, ILogge
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [HttpPost("download")]
+    [HttpGet("download")]
     public Task<IList<PayamakExpectedProcessResultPortable>> DownloadPayamaks(CancellationToken cancellationToken = default)
     {
         logger.LogDebug("DownloadPayamaks called");
