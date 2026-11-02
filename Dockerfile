@@ -6,6 +6,7 @@ FROM eclipse-temurin:${PAX_JDK_VER} AS build
 WORKDIR /workspace
 
 COPY gradle/wrapper gradle/wrapper
+COPY gradle/libs.versions.toml gradle/libs.versions.toml
 COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
 RUN chmod +x gradlew
 
