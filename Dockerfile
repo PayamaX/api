@@ -23,11 +23,11 @@ RUN --mount=type=cache,target=/root/.gradle \
 FROM eclipse-temurin:${PAX_JRE_VER}
 WORKDIR /app
 
-RUN groupadd --system spring \
-    && useradd --system --gid spring --home-dir /app spring
-USER spring:spring
+RUN groupadd --system app \
+    && useradd --system --gid app --home-dir /app app
+USER app:app
 
-COPY --from=build --chown=spring:spring /workspace/application.jar /app/application.jar
+COPY --from=build --chown=app:app /workspace/application.jar /app/application.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/application.jar"]

@@ -1,10 +1,14 @@
-. "$PSScriptRoot\compose.tag.ps1"
+$envNames = @( & (Join-Path $PSScriptRoot "env.ps1") )
+& (Join-Path $PSScriptRoot "tag.ps1")
 
-if ([string]::IsNullOrWhiteSpace($tag)) {
-    throw "TAG is not set in docker.tag"
+$buildArgs = @()
+foreach ($name in $envNames) {
+    if ([string]::IsNullOrWhiteSpace($name)) {
+        continue
+    }
+
+    $buildArgs += "--build-arg"
+    $buildArgs += $name
 }
 
-Remove-Item -Path ".nuget" -Recurse -Force
-mkdir .nuget
-Copy-Item $env:NUGET_HOME/* .nuget/
-docker build --load -t "ghcr.io/farabank/api-local:$tag" -f ./app/Dockerfile ./
+docker build --load @buildArgs -t "ghcr.io/payamax/api-local:$env:PAX_TAG" -f ./Dockerfile ./
