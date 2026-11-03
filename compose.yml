@@ -10,7 +10,7 @@ services:
         container_name: pax__api__api
         restart: always
         ports:
-            - "10000:8080"
+            - "19100:8080"
         depends_on:
             pgdb:
                 condition: service_healthy
@@ -67,21 +67,26 @@ services:
         depends_on:
             - sw-fl
     
-#    nginx:
-#        image: ghcr.io/payamax/nginx-go:${PAX_TAG}
-#        pull_policy:  never
-#        container_name: pax__api__nginx
-#        restart: always
-#        ports:
-#            - "19994:80"
-#        depends_on:
-#            - sw-s3
-    
+    nginx:
+        image: ghcr.io/payamax/nginx-go:${PAX_TAG}
+        pull_policy:  never
+        container_name: pax__api__nginx
+        restart: always
+        ports:
+            - "19000:80"
+        depends_on:
+            - sw-s3
+            - apidev
+            - pgui
+            - osui
+
     pgdb:
         image: ghcr.io/payamax/pgxdb-go:${PAX_TAG}
         pull_policy:  never
         container_name: pax__api__pg_db
         restart: always
+        ports:
+            - "19101:5432"
         healthcheck:
             test: [ "CMD-SHELL", "pg_isready -U pg -d fb" ]
             interval: 5s
@@ -94,7 +99,7 @@ services:
         container_name: pax__api__pg_ui
         restart: always
         ports:
-            - "19998:80"
+            - "19102:80"
         depends_on:
             pgdb:
                 condition: service_healthy
@@ -105,7 +110,7 @@ services:
         container_name: pax__api__kc_eg
         restart: always
         ports:
-            - "19999:8080"
+            - "19103:8080"
         depends_on:
             pgdb:
                 condition: service_healthy
@@ -125,8 +130,8 @@ services:
         container_name: pax__api__os_eg
         restart: always
         ports:
-            - "19996:9200"
-            - "19995:9600"
+            - "19104:8080"
+            - "19105:8081"
         depends_on:
             pgdb:
                 condition: service_healthy
@@ -142,7 +147,7 @@ services:
         container_name: pax__api__os_ui
         restart: always
         ports:
-            - "19997:5601"
+            - "19106:5601"
         depends_on:
             oseg:
                 condition: service_healthy

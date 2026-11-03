@@ -5,9 +5,9 @@ plugins {
     alias(libs.plugins.dependency.management)
 }
 
-group = "org.example"
+group = "no1.payamax"
 version = "0.0.1-SNAPSHOT"
-description = "demo"
+description = "api"
 
 java {
     toolchain {
@@ -23,6 +23,7 @@ dependencies {
     implementation(libs.spring.boot.starter)
     implementation(libs.spring.boot.data.jpa)
     implementation(libs.spring.boot.starter.webmvc)
+    implementation(libs.spring.boot.starter.security.oauth2.resource.server)
     implementation(libs.springdoc.openapi)
     implementation(libs.kotlin.reflect)
     testImplementation(libs.spring.boot.starter.test)
