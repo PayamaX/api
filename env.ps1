@@ -1,6 +1,21 @@
-$envFile = Join-Path $PSScriptRoot ".env"
-if (-not (Test-Path -LiteralPath $envFile)) {
-    throw ".env was not found."
+$dir = $PSScriptRoot
+$envFile = $null
+while ($dir) {
+    $candidate = Join-Path $dir ".env"
+    if (Test-Path -LiteralPath $candidate) {
+        $envFile = $candidate
+        break
+    }
+
+    $parent = Split-Path -Path $dir -Parent
+    if (-not $parent -or ($parent -eq $dir)) {
+        break
+    }
+    $dir = $parent
+}
+
+if (-not $envFile) {
+    throw ".env was not found in $PSScriptRoot or any parent directory."
 }
 
 $names = @()
@@ -24,7 +39,9 @@ foreach ($rawLine in Get-Content -LiteralPath $envFile) {
         $value = $value.Substring(1, $value.Length - 2)
     }
 
-    Set-Item -Path "Env:$name" -Value $value
+    if ($null -eq [Environment]::GetEnvironmentVariable($name)) {
+        Set-Item -Path "Env:$name" -Value $value
+    }
     $names += $name
 }
 
