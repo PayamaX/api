@@ -21,6 +21,11 @@ RUN --mount=type=cache,target=/home/gradle/.gradle \
 FROM eclipse-temurin:${PAX_JRE_VER}
 WORKDIR /app
 
+ARG PAX_PG_PAX_DDL_FW_PWD
+RUN test -n "${PAX_PG_PAX_DDL_FW_PWD}"
+ENV SPRING_FLYWAY_USER=pax_ddl_fw
+ENV SPRING_FLYWAY_PASSWORD=${PAX_PG_PAX_DDL_FW_PWD}
+
 RUN groupadd --system app \
     && useradd --system --gid app --home-dir /app app
 USER app:app

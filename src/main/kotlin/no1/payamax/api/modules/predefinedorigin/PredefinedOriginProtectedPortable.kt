@@ -12,7 +12,7 @@ data class PredefinedOriginProtectedPortable(
 ) {
 	companion object {
 		fun create(entity: PredefinedOriginEntity) = PredefinedOriginProtectedPortable(
-			entity.id,
+			checkNotNull(entity.id),
 			entity.globalId,
 			entity.origin,
 			entity.rank,

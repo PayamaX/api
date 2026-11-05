@@ -1,6 +1,8 @@
 package no1.payamax.api.oauth
 
 import org.springframework.boot.context.properties.ConfigurationProperties
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @ConfigurationProperties(prefix = "oauth2")
 class OAuth2Properties {
@@ -42,6 +44,11 @@ class OAuth2Properties {
 
 	fun metadataUrl(): String {
 		return "${privateRealmUrl.normalizedUrl()}/.well-known/openid-configuration"
+	}
+
+	fun endSessionUrl(): String {
+		val client = URLEncoder.encode(clientId.trim(), StandardCharsets.UTF_8)
+		return "${publicRealmUrl.normalizedUrl()}/protocol/openid-connect/logout?client_id=$client"
 	}
 }
 

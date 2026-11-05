@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletRequestWrapper
 import jakarta.servlet.http.HttpServletResponse
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -71,6 +72,26 @@ class HttpTrafficLoggingFilterTest {
 		assertTrue(message.contains("request body:\n{\"name\":\"Pāx\"}"))
 		assertTrue(message.contains("X-Response-Id: resp-1"))
 		assertTrue(message.contains("response body:\n{\"ok\":true}"))
+	}
+
+	@Test
+	fun `logs a request body when content length is unknown and the request is wrapped`() {
+		val request = object : MockHttpServletRequest("POST", "/origins") {
+			override fun getContentLength(): Int = -1
+			override fun getContentLengthLong(): Long = -1
+		}
+		request.setContent("""{"name":"Pāx"}""".toByteArray(UTF_8))
+		val wrapped = HttpServletRequestWrapper(request)
+
+		val response = MockHttpServletResponse()
+		val message = capture {
+			HttpTrafficLoggingFilter().doFilter(wrapped, response) { req, _ ->
+				val httpRequest = req as HttpServletRequest
+				assertEquals("""{"name":"Pāx"}""", httpRequest.inputStream.readBytes().toString(UTF_8))
+			}
+		}
+
+		assertTrue(message.contains("request body:\n{\"name\":\"Pāx\"}"))
 	}
 
 	@Test

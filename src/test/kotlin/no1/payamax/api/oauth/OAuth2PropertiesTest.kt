@@ -22,6 +22,16 @@ class OAuth2PropertiesTest {
 	}
 
 	@Test
+	fun `builds the identity provider end session url from the public realm`() {
+		val properties = configured().apply { clientId = "Swagger UI" }
+
+		assertEquals(
+			"https://kc:8080/realms/pax/protocol/openid-connect/logout?client_id=Swagger+UI",
+			properties.endSessionUrl(),
+		)
+	}
+
+	@Test
 	fun `accepts configured audiences and the client id`() {
 		val properties = configured()
 

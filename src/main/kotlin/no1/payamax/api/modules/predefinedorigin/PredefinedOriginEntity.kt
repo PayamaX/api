@@ -1,30 +1,17 @@
 package no1.payamax.api.modules.predefinedorigin
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.Id
-import jakarta.persistence.Table
-import java.util.*
+import no1.payamax.api.r2dbc.Sequenced
+import org.springframework.data.annotation.Id
+import org.springframework.data.relational.core.mapping.Table
+import java.util.UUID
 
-@Entity
 @Table
 class PredefinedOriginEntity(
 	@Id
-	@Column(nullable = false, updatable = false)
-	var id: Long,
-
-	@Column(nullable = false, updatable = false, unique = true)
+	override var id: Long? = null,
 	var globalId: UUID,
-
-	@Column(nullable = false, length = 255)
 	var origin: String,
-
-	@Column(nullable = false)
 	var rank: Double,
-
-	@Column(nullable = true)
 	var ownerGlobalId: UUID?,
-
-	@Column
 	var position: Int = 0,
-)
+) : Sequenced

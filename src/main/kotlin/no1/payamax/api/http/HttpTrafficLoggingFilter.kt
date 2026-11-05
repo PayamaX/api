@@ -46,11 +46,10 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 	) {
 		val started = System.nanoTime()
 		val parts = captureParts(request)
-		val requestToUse = if (parts != null || !shouldBufferBody(request)) {
-			request
-		} else {
-			CachedBodyRequestWrapper(request)
-		}
+		// Multipart bodies are logged from parts. Every other body is copied here, before the
+		// chain runs, because later filters replace the request and the original stream is then empty.
+		val cachedBody = if (parts != null) null else request.inputStream.readBytes()
+		val requestToUse = if (cachedBody == null) request else CachedBodyRequestWrapper(request, cachedBody)
 		val responseToUse = ContentCachingResponseWrapper(response)
 		var failure: Exception? = null
 		try {
@@ -59,7 +58,16 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 			failure = ex
 		} finally {
 			try {
-				log.info(formatExchange(requestToUse, responseToUse, resolveParts(requestToUse, parts), started, failure))
+				log.info(
+					formatExchange(
+						requestToUse,
+						responseToUse,
+						resolveParts(requestToUse, parts),
+						cachedBody,
+						started,
+						failure,
+					),
+				)
 			} catch (ex: Exception) {
 				log.warn("Failed to write the HTTP traffic log.", ex)
 			}
@@ -99,20 +107,11 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 		}
 	}
 
-	private fun shouldBufferBody(request: HttpServletRequest): Boolean {
-		if (request.contentLengthLong == 0L) {
-			return false
-		}
-		if (request.contentLengthLong > 0L) {
-			return true
-		}
-		return !request.contentType.isNullOrBlank()
-	}
-
 	private fun formatExchange(
 		request: HttpServletRequest,
 		response: ContentCachingResponseWrapper,
 		parts: PartCapture?,
+		cachedBody: ByteArray?,
 		startedNanos: Long,
 		failure: Exception?,
 	): String {
@@ -143,7 +142,7 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 			appendHeaders("request headers:", request.headerNames.asList()) { name ->
 				request.getHeaders(name).asList()
 			}
-			appendRequestBody(request, parts)
+			appendRequestBody(request, parts, cachedBody)
 			appendHeaders("response headers:", response.headerNames) { name ->
 				response.getHeaders(name)
 			}
@@ -151,7 +150,11 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 		}
 	}
 
-	private fun StringBuilder.appendRequestBody(request: HttpServletRequest, parts: PartCapture?) {
+	private fun StringBuilder.appendRequestBody(
+		request: HttpServletRequest,
+		parts: PartCapture?,
+		cachedBody: ByteArray?,
+	) {
 		when (parts) {
 			is PartCapture.Failed -> {
 				append("request body:\n(multipart unavailable: ")
@@ -159,10 +162,12 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 				append(")\n")
 			}
 			is PartCapture.Ready -> appendParts(request, parts.parts)
-			null -> {
-				val bytes = (request as? CachedBodyRequestWrapper)?.cachedBody ?: ByteArray(0)
-				appendPayload("request body:", request.contentType, request.characterEncoding, bytes)
-			}
+			null -> appendPayload(
+				"request body:",
+				request.contentType,
+				request.characterEncoding,
+				cachedBody ?: ByteArray(0),
+			)
 		}
 	}
 
@@ -320,11 +325,9 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 
 private class CachedBodyRequestWrapper(
 	request: HttpServletRequest,
+	private val cachedBody: ByteArray,
 ) : HttpServletRequestWrapper(request) {
-	val cachedBody: ByteArray = request.inputStream.readBytes()
-	private val bodyStream = CachedBodyServletInputStream(cachedBody)
-
-	override fun getInputStream(): ServletInputStream = bodyStream
+	override fun getInputStream(): ServletInputStream = CachedBodyServletInputStream(cachedBody)
 
 	override fun getReader(): BufferedReader {
 		val encoding = characterEncoding?.takeIf { it.isNotBlank() } ?: StandardCharsets.UTF_8.name()

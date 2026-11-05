@@ -16,11 +16,14 @@ services:
                 condition: service_healthy
             oseg:
                 condition: service_healthy
-            kckc:
+            kc:
                 condition: service_healthy
         environment:
             - StorageConfig__AccessKey=FILE_S3_KEY
             - StorageConfig__SecretKey=SECRET33
+            - SPRING_FLYWAY_USER=pax_ddl_fw
+            - SPRING_FLYWAY_PASSWORD=${PAX_PG_PAX_DDL_FW_PWD}
+            - PAX_PG_PAX_DDL_FW_PWD=${PAX_PG_PAX_DDL_FW_PWD}
         volumes:
             - ./assets/tls/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
             - ./assets/tls/client.pem:/usr/share/opensearch/config/client.pem
@@ -28,14 +31,14 @@ services:
     
     sw-mt:
         image: chrislusf/seaweedfs:latest
-        pull_policy:  never
+#       pull_policy:  never
         container_name: pax__api__sw_master
         hostname: fb-sw-master
         command: master
     
     sw-vl:
         image: chrislusf/seaweedfs:latest
-        pull_policy:  never
+#       pull_policy:  never
         container_name: pax__api__sw_volume
         hostname: fb-sw-volume
         command: volume -mserver=sw-mt:9333 -dir=/data
@@ -46,7 +49,7 @@ services:
     
     sw-fl:
         image: chrislusf/seaweedfs:latest
-        pull_policy:  never
+#       pull_policy:  never
         container_name: pax__api__sw_filer
         hostname: fb-sw-filer
         command: filer -master=sw-mt:9333
@@ -55,7 +58,7 @@ services:
     
     sw-s3:
         image: chrislusf/seaweedfs:latest
-        pull_policy:  never
+#       pull_policy:  never
         container_name: pax__api__sw_s3
         hostname: fb-sw-s3
         command: s3 -filer=sw-fl:8888
@@ -69,7 +72,7 @@ services:
     
     nginx:
         image: ghcr.io/payamax/nginx-go:${PAX_TAG}
-        pull_policy:  never
+#       pull_policy:  never
         container_name: pax__api__nginx
         restart: always
         ports:
@@ -82,7 +85,7 @@ services:
 
     pgdb:
         image: ghcr.io/payamax/pgxdb-go:${PAX_TAG}
-        pull_policy:  never
+#       pull_policy:  never
         container_name: pax__api__pg_db
         restart: always
         ports:
@@ -95,7 +98,7 @@ services:
 
     pgui:
         image: ghcr.io/payamax/pgxui-go:${PAX_TAG}
-        pull_policy:  never
+#       pull_policy:  never
         container_name: pax__api__pg_ui
         restart: always
         ports:
@@ -104,9 +107,9 @@ services:
             pgdb:
                 condition: service_healthy
 
-    kckc:
-        image: ghcr.io/payamax/kcxkc-go:${PAX_TAG}
-        pull_policy:  never
+    kc:
+        image: ghcr.io/payamax/kc-go:${PAX_TAG}
+#        pull_policy:  always
         container_name: pax__api__kc_eg
         restart: always
         ports:
@@ -126,7 +129,7 @@ services:
             start_period: 60s
     oseg:
         image: ghcr.io/payamax/osxeg-go:${PAX_TAG}
-        pull_policy:  never
+#       pull_policy:  never
         container_name: pax__api__os_eg
         restart: always
         ports:
@@ -143,7 +146,7 @@ services:
             start_period: 60s
     osui:
         image: ghcr.io/payamax/osxui-go:${PAX_TAG}
-        pull_policy:  never
+#       pull_policy:  never
         container_name: pax__api__os_ui
         restart: always
         ports:
