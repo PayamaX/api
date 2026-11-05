@@ -7,6 +7,9 @@ data class PredefinedOriginPublicPortable(
 	val globalId: UUID,
 	val origin: String,
 	val rank: Double,
-	val order: Int,
-	val added: Instant,
-)
+	val position: Int,
+) {
+	companion object {
+		fun create(entity: PredefinedOriginEntity) = PredefinedOriginPublicPortable(entity.globalId, entity.origin, entity.rank, entity.position)
+	}
+}

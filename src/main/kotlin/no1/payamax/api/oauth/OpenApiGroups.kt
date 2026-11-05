@@ -1,8 +1,11 @@
 package no1.payamax.api.oauth
 
+import io.swagger.v3.oas.models.OpenAPI
+import org.springdoc.core.customizers.OpenApiCustomizer
 import org.springdoc.core.models.GroupedOpenApi
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import java.util.Locale
 
 @Configuration
 class OpenApiGroups {
@@ -10,37 +13,45 @@ class OpenApiGroups {
 	fun managersOpenApi(): GroupedOpenApi = groupedOpenApi(
 		group = "managers",
 		displayName = "Managers",
-		pathsToMatch = arrayOf("/v1/Protected/**"),
-	)
+	) { path -> path.matchesPrefix("/v1/Protected") }
 
 	@Bean
 	fun usersOpenApi(): GroupedOpenApi = groupedOpenApi(
 		group = "users",
 		displayName = "Users",
-		pathsToMatch = arrayOf("/v1/Public/**"),
-	)
+	) { path -> path.matchesPrefix("/v1/Public") }
 
 	@Bean
 	fun developersOpenApi(): GroupedOpenApi = groupedOpenApi(
 		group = "developers",
 		displayName = "Developers",
-		pathsToMatch = arrayOf("/**"),
-		pathsToExclude = arrayOf("/v1/Protected/**", "/v1/Public/**"),
-	)
+	) { path -> !path.matchesPrefix("/v1/Protected") && !path.matchesPrefix("/v1/Public") }
 
 	private fun groupedOpenApi(
 		group: String,
 		displayName: String,
-		pathsToMatch: Array<String>,
-		pathsToExclude: Array<String> = emptyArray(),
+		include: (String) -> Boolean,
 	): GroupedOpenApi {
-		val builder = GroupedOpenApi.builder()
+		return GroupedOpenApi.builder()
 			.group(group)
 			.displayName(displayName)
-			.pathsToMatch(*pathsToMatch)
-		if (pathsToExclude.isNotEmpty()) {
-			builder.pathsToExclude(*pathsToExclude)
-		}
-		return builder.build()
+			.pathsToMatch("/**")
+			.addOpenApiCustomizer(retainPaths(include))
+			.build()
 	}
+
+	private fun retainPaths(include: (String) -> Boolean): OpenApiCustomizer {
+		return OpenApiCustomizer { openApi -> openApi.retainPaths(include) }
+	}
+}
+
+private fun OpenAPI.retainPaths(include: (String) -> Boolean) {
+	val paths = this.paths ?: return
+	paths.keys.filterNot(include).forEach { paths.remove(it) }
+}
+
+private fun String.matchesPrefix(prefix: String): Boolean {
+	val path = lowercase(Locale.ROOT)
+	val needle = prefix.trimEnd('/').lowercase(Locale.ROOT)
+	return path == needle || path.startsWith("$needle/")
 }

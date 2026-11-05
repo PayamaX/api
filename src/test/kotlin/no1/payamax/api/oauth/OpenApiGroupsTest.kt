@@ -1,52 +1,44 @@
 package no1.payamax.api.oauth
 
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.PathItem
+import io.swagger.v3.oas.models.Paths
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springdoc.core.models.GroupedOpenApi
-import org.springframework.util.AntPathMatcher
 
 class OpenApiGroupsTest {
 	private val groups = OpenApiGroups()
-	private val matcher = AntPathMatcher()
+	private val paths = listOf(
+		"/v1/Protected/origins",
+		"/v1/protected/accounts",
+		"/v1/PUBLIC/profile",
+		"/v1/PublicExtra",
+		"/origins",
+	)
 
 	@Test
-	fun `managers document lists protected endpoints`() {
-		val managers = groups.managersOpenApi()
-
-		assertEquals("Managers", managers.displayName)
-		assertTrue(includes(managers, "/v1/Protected/origins"))
-		assertFalse(includes(managers, "/v1/Public/origins"))
-		assertFalse(includes(managers, "/origins"))
+	fun `managers document lists protected endpoints ignoring case`() {
+		assertEquals(
+			setOf("/v1/Protected/origins", "/v1/protected/accounts"),
+			pathsIn(groups.managersOpenApi()),
+		)
 	}
 
 	@Test
-	fun `users document lists public endpoints`() {
-		val users = groups.usersOpenApi()
-
-		assertEquals("Users", users.displayName)
-		assertTrue(includes(users, "/v1/Public/origins"))
-		assertFalse(includes(users, "/v1/Protected/origins"))
-		assertFalse(includes(users, "/origins"))
+	fun `users document lists public endpoints ignoring case`() {
+		assertEquals(setOf("/v1/PUBLIC/profile"), pathsIn(groups.usersOpenApi()))
 	}
 
 	@Test
 	fun `developers document lists every other endpoint`() {
-		val developers = groups.developersOpenApi()
-
-		assertEquals("Developers", developers.displayName)
-		assertTrue(includes(developers, "/origins"))
-		assertTrue(includes(developers, "/v1/internal/origins"))
-		assertFalse(includes(developers, "/v1/Protected/origins"))
-		assertFalse(includes(developers, "/v1/Public/origins"))
+		assertEquals(setOf("/v1/PublicExtra", "/origins"), pathsIn(groups.developersOpenApi()))
 	}
 
-	private fun includes(group: GroupedOpenApi, path: String): Boolean {
-		val pathsToMatch = group.pathsToMatch.orEmpty()
-		val pathsToExclude = group.pathsToExclude.orEmpty()
-		val included = pathsToMatch.isEmpty() || pathsToMatch.any { matcher.match(it, path) }
-		val excluded = pathsToExclude.any { matcher.match(it, path) }
-		return included && !excluded
+	private fun pathsIn(group: GroupedOpenApi): Set<String> {
+		val openApi = OpenAPI().paths(Paths())
+		paths.forEach { openApi.paths.addPathItem(it, PathItem()) }
+		group.openApiCustomizers.forEach { it.customise(openApi) }
+		return openApi.paths.keys.toSet()
 	}
 }
