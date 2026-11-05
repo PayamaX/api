@@ -20,7 +20,7 @@ concurrency:
 
 env:
   SERVICES_REPOSITORY: PayamaX/services
-  SERVICES_BRANCH: main
+  SERVICES_BRANCH: init
   MIGRATIONS_SOURCE: src/main/resources/db/migration
   MIGRATIONS_TARGET: Postgres/Engine/migrations
 
