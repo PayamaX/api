@@ -1,32 +1,84 @@
-name: Use Private NuGet Package
+name: Build
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PAX_JDK_VER: "25"
+  PAX_JRE_VER: "25-jre"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v4
         with:
-          dotnet-version: '9.0'
+          distribution: temurin
+          java-version: ${{ env.PAX_JDK_VER }}
 
-      - name: Add GitHub Packages Source
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build
+        run: ./gradlew classes
+
+      - name: Test
+        run: ./gradlew test
+
+      - name: Package
+        run: ./gradlew bootJar
+
+      - name: Check Flyway image secret
+        env:
+          PAX_PG_PAX_DDL_FW_PWD: ${{ secrets.PAX_PG_PAX_DDL_FW_PWD }}
         run: |
-          dotnet nuget add source --username behzadian --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Farayan/index.json"
+          if [ -z "${PAX_PG_PAX_DDL_FW_PWD}" ]; then
+            echo "::error::Repository secret PAX_PG_PAX_DDL_FW_PWD is missing. The image build requires it."
+            exit 1
+          fi
 
-      - name: Restore Dependencies
-        run: dotnet restore
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Project
-        run: dotnet build --configuration Release
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=${{ github.ref_name }}
+            type=sha,format=short
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            PAX_JDK_VER=${{ env.PAX_JDK_VER }}
+            PAX_JRE_VER=${{ env.PAX_JRE_VER }}
+            PAX_PG_PAX_DDL_FW_PWD=${{ secrets.PAX_PG_PAX_DDL_FW_PWD }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

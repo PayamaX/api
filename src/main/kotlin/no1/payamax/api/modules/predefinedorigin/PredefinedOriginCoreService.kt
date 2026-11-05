@@ -9,9 +9,10 @@ class PredefinedOriginCoreService(private val repository: PredefinedOriginReposi
 	override suspend fun persist(input: PredefinedOriginProtectedInput): PredefinedOriginEntity {
 		var persisted = repository.findOneByOrigin(input.origin)
 		if (persisted != null) {
-			if (persisted.globalId != input.globalId) {
+			if (input.globalId != null && persisted.globalId != input.globalId) {
 				throw InvalidValueException()
 			}
+			persisted.globalId = input.globalId ?: UUID.randomUUID()
 			persisted.origin = input.origin
 			persisted.rank = input.rank
 			persisted.ownerGlobalId = input.ownerGlobalId

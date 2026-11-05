@@ -7,6 +7,7 @@ springdoc = "3.2.0"
 [libraries]
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
 spring-boot-starter-data-r2dbc = { module = "org.springframework.boot:spring-boot-starter-data-r2dbc" }
+jakarta-persistence-api = { module = "jakarta.persistence:jakarta.persistence-api" }
 r2dbc-postgresql = { module = "org.postgresql:r2dbc-postgresql" }
 spring-boot-starter-flyway = { module = "org.springframework.boot:spring-boot-starter-flyway" }
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }

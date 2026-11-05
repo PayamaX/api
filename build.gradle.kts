@@ -22,6 +22,7 @@ repositories {
 dependencies {
     implementation(libs.spring.boot.starter)
     implementation(libs.spring.boot.starter.data.r2dbc)
+    implementation(libs.jakarta.persistence.api)
     runtimeOnly(libs.r2dbc.postgresql)
     implementation(libs.spring.boot.starter.flyway)
     runtimeOnly(libs.flyway.database.postgresql)

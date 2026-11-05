@@ -17,19 +17,3 @@ class DatabaseConfiguration {
 		override fun getTableName(type: Class<*>): String = super.getTableName(type).removeSuffix("_entity")
 	}
 }
-
-/*@Component
-class SequenceIdCallback(private val databaseClient: DatabaseClient) : BeforeConvertCallback<Sequenced> {
-	override fun onBeforeConvert(aggregate: Sequenced, table: SqlIdentifier): Publisher<Sequenced> {
-		if (aggregate.id != null) {
-			return Mono.just(aggregate)
-		}
-		return databaseClient.sql("select nextval('id')")
-			.map { row -> (row.get(0) as Number).toLong() }
-			.one()
-			.map { id ->
-				aggregate.id = id
-				aggregate
-			}
-	}
-}*/
