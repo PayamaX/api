@@ -14,9 +14,9 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @RestControllerAdvice
 class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
-	@ExceptionHandler(InvalidValueException::class)
-	fun handleInvalidValue(ex: InvalidValueException, request: WebRequest): ResponseEntity<Any>? =
-		respond(ex, HttpStatus.BAD_REQUEST, ex.message ?: "Invalid value", request)
+	@ExceptionHandler(SuperException::class)
+	fun handleSuper(ex: SuperException, request: WebRequest): ResponseEntity<Any>? =
+		handleExceptionInternal(ex, null, ex.headers, ex.statusCode, request)
 
 	@ExceptionHandler(AuthenticationException::class)
 	fun handleUnauthenticated(ex: AuthenticationException, request: WebRequest): ResponseEntity<Any>? =

@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.web.filter.OncePerRequestFilter
-import org.springframework.web.util.ContentCachingResponseWrapper
 import java.io.BufferedReader
 import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
@@ -31,9 +30,10 @@ class HttpLogConfiguration {
 }
 
 /**
- * Logs the full HTTP exchange: request and response headers, textual bodies, and
- * multipart file metadata. Registered only when `http-log.enabled` is true.
- * Non-multipart bodies are buffered so they can be logged and still be read by the application.
+ * Logs the HTTP exchange: request and response headers, the request body, and
+ * multipart file metadata. The response body is not logged or buffered, so the
+ * application writes it straight to the client. Registered only when `http-log.enabled` is true.
+ * Non-multipart request bodies are buffered so they can be logged and still be read by the application.
  * Multipart file contents are not written; the part name, filename, content type, size, and headers are.
  */
 class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
@@ -50,10 +50,9 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 		// chain runs, because later filters replace the request and the original stream is then empty.
 		val cachedBody = if (parts != null) null else request.inputStream.readBytes()
 		val requestToUse = if (cachedBody == null) request else CachedBodyRequestWrapper(request, cachedBody)
-		val responseToUse = ContentCachingResponseWrapper(response)
 		var failure: Exception? = null
 		try {
-			filterChain.doFilter(requestToUse, responseToUse)
+			filterChain.doFilter(requestToUse, response)
 		} catch (ex: Exception) {
 			failure = ex
 		} finally {
@@ -61,7 +60,7 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 				log.info(
 					formatExchange(
 						requestToUse,
-						responseToUse,
+						response,
 						resolveParts(requestToUse, parts),
 						cachedBody,
 						started,
@@ -70,14 +69,6 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 				)
 			} catch (ex: Exception) {
 				log.warn("Failed to write the HTTP traffic log.", ex)
-			}
-			try {
-				responseToUse.copyBodyToResponse()
-			} catch (ex: Exception) {
-				log.warn("Failed to write the cached HTTP response.", ex)
-				if (failure == null) {
-					failure = ex
-				}
 			}
 		}
 		if (failure != null) {
@@ -109,7 +100,7 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 
 	private fun formatExchange(
 		request: HttpServletRequest,
-		response: ContentCachingResponseWrapper,
+		response: HttpServletResponse,
 		parts: PartCapture?,
 		cachedBody: ByteArray?,
 		startedNanos: Long,
@@ -146,7 +137,6 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 			appendHeaders("response headers:", response.headerNames) { name ->
 				response.getHeaders(name)
 			}
-			//appendPayload("response body:", response.contentType, response.characterEncoding, response.contentAsByteArray)
 		}
 	}
 

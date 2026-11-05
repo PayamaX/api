@@ -22,8 +22,4 @@ class PredefinedOriginPublicService(
 			.toPage(pageable, repository.countByOwnerGlobalId(ownerId))
 			.map { PredefinedOriginPublicPortable.create(it) }
 	}
-
-	override suspend fun persist(input: PredefinedOriginProtectedInput): PredefinedOriginPublicPortable {
-		return PredefinedOriginPublicPortable.create(coreProvider.persist(input))
-	}
 }

@@ -38,7 +38,7 @@ class HttpTrafficLoggingFilterTest {
 	}
 
 	@Test
-	fun `logs request and response headers and bodies and replays the request body`() {
+	fun `logs request and response headers and the request body`() {
 		val request = MockHttpServletRequest("POST", "/origins")
 		request.queryString = "q=1"
 		request.protocol = "HTTP/1.1"
@@ -71,7 +71,8 @@ class HttpTrafficLoggingFilterTest {
 		assertTrue(message.contains("X-Request-Id: req-1"))
 		assertTrue(message.contains("request body:\n{\"name\":\"Pāx\"}"))
 		assertTrue(message.contains("X-Response-Id: resp-1"))
-		assertTrue(message.contains("response body:\n{\"ok\":true}"))
+		assertFalse(message.contains("response body:"))
+		assertFalse(message.contains("{\"ok\":true}"))
 	}
 
 	@Test
@@ -121,7 +122,7 @@ class HttpTrafficLoggingFilterTest {
 	}
 
 	@Test
-	fun `logs binary response metadata instead of raw bytes`() {
+	fun `returns a binary response without logging its bytes`() {
 		val request = MockHttpServletRequest("GET", "/file")
 		val response = MockHttpServletResponse()
 		val payload = "BINARY_BODY_SHOULD_NOT_APPEAR".toByteArray(UTF_8)
@@ -136,7 +137,7 @@ class HttpTrafficLoggingFilterTest {
 
 		assertEquals(payload.toList(), response.contentAsByteArray.toList())
 		assertTrue(message.contains("Content-Disposition: attachment; filename=\"report.bin\""))
-		assertTrue(message.contains("(binary contentType=application/octet-stream, size=${payload.size} bytes)"))
+		assertFalse(message.contains("response body:"))
 		assertFalse(message.contains("BINARY_BODY_SHOULD_NOT_APPEAR"))
 	}
 

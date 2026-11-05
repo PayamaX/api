@@ -14,4 +14,5 @@ interface PredefinedOriginRepository : CoroutineCrudRepository<PredefinedOriginE
 	suspend fun countByOwnerGlobalIdNull(): Long
 	suspend fun countByOwnerGlobalId(ownerId: UUID): Long
 	suspend fun findOneByOrigin(origin: String): PredefinedOriginEntity?
+	suspend fun findOneByGlobalId(globalId: UUID): PredefinedOriginEntity?
 }

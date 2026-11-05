@@ -3,6 +3,7 @@ package no1.payamax.api.exceptions
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.AuthenticationException
@@ -37,6 +38,17 @@ class GlobalExceptionHandlerTest {
 		mockMvc.perform(get("/invalid-message"))
 			.andExpect(status().isBadRequest)
 			.andExpect(jsonPath("$.detail").value("Origin is already registered."))
+	}
+
+	@Test
+	fun `every super exception becomes a problem detail`() {
+		mockMvc.perform(get("/conflict"))
+			.andExpect(status().isConflict)
+			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.title").value("Conflict"))
+			.andExpect(jsonPath("$.status").value(409))
+			.andExpect(jsonPath("$.detail").value("Already stored."))
+			.andExpect(jsonPath("$.instance").value("/conflict"))
 	}
 
 	@Test
@@ -82,6 +94,9 @@ private class ExceptionHandlerFixtureController {
 	@GetMapping("/invalid-message")
 	fun invalidMessage(): Unit = throw InvalidValueException("Origin is already registered.")
 
+	@GetMapping("/conflict")
+	fun conflict(): Unit = throw ConflictException("Already stored.")
+
 	@GetMapping("/unauthenticated")
 	fun unauthenticated(): Unit = throw object : AuthenticationException("missing token") {}
 
@@ -94,3 +109,5 @@ private class ExceptionHandlerFixtureController {
 	@PostMapping("/echo")
 	fun echo(@RequestBody body: Map<String, String>): Map<String, String> = body
 }
+
+private class ConflictException(message: String) : SuperException(HttpStatus.CONFLICT, message)
