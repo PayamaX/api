@@ -40,7 +40,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Restore dependencies
-        run: ./gradlew dependencies
+        run: bash ./gradlew dependencies
 
       - name: Check vulnerable dependencies
         env:
@@ -50,13 +50,13 @@ jobs:
             echo "::error::Set the NVD_API_KEY repository secret to run dependency vulnerability scanning."
             exit 1
           fi
-          ./gradlew dependencyCheckAnalyze
+          bash ./gradlew dependencyCheckAnalyze
 
       - name: Check
-        run: ./gradlew check
+        run: bash ./gradlew check
 
       - name: Build
-        run: ./gradlew assemble -x test
+        run: bash ./gradlew assemble -x test
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
