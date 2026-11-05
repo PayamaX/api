@@ -1,84 +1,104 @@
-name: Build
+name: Deploy Development & Production
 
 on:
-  workflow_dispatch:
   push:
-
-permissions:
-  contents: read
-  packages: write
-  id-token: write
-
-concurrency:
-  group: build-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  PAX_JDK_VER: "25"
-  PAX_JRE_VER: "25-jre"
+  workflow_dispatch:
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/checkout@v7
         with:
-          distribution: temurin
-          java-version: ${{ env.PAX_JDK_VER }}
+          fetch-depth: 1
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Resolve PAX_TAG
+        run: bash .github/scripts/tag.sh
 
-      - name: Build
-        run: ./gradlew classes
-
-      - name: Test
-        run: ./gradlew test
-
-      - name: Package
-        run: ./gradlew bootJar
-
-      - name: Check Flyway image secret
-        env:
-          PAX_PG_PAX_DDL_FW_PWD: ${{ secrets.PAX_PG_PAX_DDL_FW_PWD }}
-        run: |
-          if [ -z "${PAX_PG_PAX_DDL_FW_PWD}" ]; then
-            echo "::error::Repository secret PAX_PG_PAX_DDL_FW_PWD is missing. The image build requires it."
-            exit 1
-          fi
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Image metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          flavor: |
-            latest=false
-          tags: |
-            type=raw,value=${{ github.ref_name }}
-            type=sha,format=short
+      - name: Create .env file
+        run: cp +env .env
 
-      - name: Build and push image
-        uses: docker/build-push-action@v6
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Restore dependencies
+        run: ./gradlew dependencies
+
+      - name: Check vulnerable dependencies
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -z "$NVD_API_KEY" ]; then
+            echo "::error::Set the NVD_API_KEY repository secret to run dependency vulnerability scanning."
+            exit 1
+          fi
+          ./gradlew dependencyCheckAnalyze
+
+      - name: Check
+        run: ./gradlew check
+
+      - name: Build
+        run: ./gradlew assemble -x test
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Lowercase repository owner
+        run: |
+          echo "OWNER_LOWERCASE=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Create Root CA file
+        env:
+          ROOT_CA: ${{ secrets.ROOT_CA }}
+        run: |
+          mkdir -p assets/tls
+          echo "$ROOT_CA" > assets/tls/root-ca.pem
+
+      - name: Build and push images
+        uses: docker/build-push-action@v7
         with:
           context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            PAX_JDK_VER=${{ env.PAX_JDK_VER }}
-            PAX_JRE_VER=${{ env.PAX_JRE_VER }}
-            PAX_PG_PAX_DDL_FW_PWD=${{ secrets.PAX_PG_PAX_DDL_FW_PWD }}
+
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+          provenance: false
+          sbom: false
+
+          build-args: |
+            BUILD_MODE=CI
+
+          tags: |
+            ghcr.io/${{ env.OWNER_LOWERCASE }}/${{ github.event.repository.name }}-dev:${{ env.TAG }}
+
+      - name: Trigger Services rebuild
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.SERVICES_REPO_PAT }}
+          repository: PayamaX/services
+          event-type: api-image-published
+          client-payload: '{"PAX_TAG":"${{ env.PAX_TAG }}"}'

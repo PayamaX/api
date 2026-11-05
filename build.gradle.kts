@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.spring)
     alias(libs.plugins.spring.boot)
     alias(libs.plugins.dependency.management)
+    alias(libs.plugins.owasp.dependency.check)
 }
 
 group = "no1.payamax"
@@ -35,6 +36,11 @@ dependencies {
     testImplementation(libs.kotlin.test.junit5)
     testRuntimeOnly(libs.junit.platform.launcher)
 	runtimeOnly("org.postgresql:postgresql")
+}
+
+dependencyCheck {
+    failBuildOnCVSS = 7.0F
+    nvd.apiKey = providers.environmentVariable("NVD_API_KEY").orNull
 }
 
 kotlin {
