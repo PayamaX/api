@@ -26,9 +26,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create .env file
-        run: cp \+env .env
 				
       - name: Load +env
         run: |
