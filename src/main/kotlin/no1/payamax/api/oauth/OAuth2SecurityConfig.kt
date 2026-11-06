@@ -26,17 +26,20 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.access.ExceptionTranslationFilter
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientException
 import java.time.Duration
 
 @Configuration
-@EnableConfigurationProperties(OAuth2Properties::class)
+@EnableConfigurationProperties(OAuth2Properties::class, SwaggerAccessProperties::class)
 class OAuth2SecurityConfig(
 	private val oauth2: OAuth2Properties,
+	private val swaggerAccess: SwaggerAccessProperties,
 ) {
 	init {
 		oauth2.validate()
+		swaggerAccess.validate()
 	}
 
 	@Bean
@@ -46,13 +49,10 @@ class OAuth2SecurityConfig(
 			.sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
 			.authorizeHttpRequests { requests ->
 				requests
-					.requestMatchers(
-						"/error",
-						"/swagger-ui.html",
-						"/swagger-ui/**",
-						"/v3/api-docs",
-						"/v3/api-docs/**",
-					).permitAll()
+					.requestMatchers("/error").permitAll()
+					// SwaggerAccessFilter is the gate. These stay unauthenticated so a
+					// client inside an allowed range can open the docs without a token.
+					.requestMatchers(*swaggerDocumentationPatterns.toTypedArray()).permitAll()
 					.anyRequest().authenticated()
 			}
 			.oauth2ResourceServer { resourceServer ->
@@ -61,6 +61,7 @@ class OAuth2SecurityConfig(
 					jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())
 				}
 			}
+			.addFilterAfter(SwaggerAccessFilter(swaggerAccess), ExceptionTranslationFilter::class.java)
 		return http.build()
 	}
 
