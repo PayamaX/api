@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
 ARG PAX_JDK_VER
 ARG PAX_JRE_VER
+ARG PAX_GRD_VER
 
-FROM gradle:9.8.2-jdk25 AS build
+FROM gradle:${PAX_GRD_VER} AS build
 WORKDIR /workspace
 
 COPY gradle/libs.versions.toml gradle/libs.versions.toml

@@ -34,13 +34,13 @@ jobs:
 #        run: bash .github/scripts/env.sh
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v7
         with:
           distribution: temurin
           java-version: "25"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
         with:
           cache-disabled: false
 
@@ -96,9 +96,10 @@ jobs:
 
           build-args: |
             BUILD_MODE=CI
-            PAX_JDK_VER=${PAX_JDK_VER}
-            PAX_JRE_VER=${PAX_JRE_VER}
-            PAX_PG_PAX_DDL_FW_PWD=${PAX_PG_PAX_DDL_FW_PWD}
+            PAX_JDK_VER=${{ env.PAX_JDK_VER }}
+            PAX_JRE_VER=${{ env.PAX_JRE_VER }}
+            PAX_GRD_VER=${{ env.PAX_GRD_VER }}
+            PAX_PG_PAX_DDL_FW_PWD=${{ env.PAX_PG_PAX_DDL_FW_PWD }}
 
           tags: |
             ghcr.io/${{ env.OWNER_LOWERCASE }}/${{ github.event.repository.name }}-dev:${{ env.PAX_TAG }}
