@@ -28,7 +28,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create .env file
-        run: cp +env .env
+        run: cp \+env .env
 				
       - name: Load +env
         run: |
