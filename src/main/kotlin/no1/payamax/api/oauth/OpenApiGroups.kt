@@ -10,21 +10,21 @@ import java.util.Locale
 @Configuration
 class OpenApiGroups {
 	@Bean
-	fun managersOpenApi(): GroupedOpenApi = groupedOpenApi(
-		group = "managers",
-		displayName = "Managers",
+	fun protectedOpenApi(): GroupedOpenApi = groupedOpenApi(
+		group = "protected",
+		displayName = "Protected",
 	) { path -> path.matchesPrefix("/v1/Protected") }
 
 	@Bean
-	fun usersOpenApi(): GroupedOpenApi = groupedOpenApi(
-		group = "users",
-		displayName = "Users",
+	fun publicOpenApi(): GroupedOpenApi = groupedOpenApi(
+		group = "public",
+		displayName = "Public",
 	) { path -> path.matchesPrefix("/v1/Public") }
 
 	@Bean
-	fun developersOpenApi(): GroupedOpenApi = groupedOpenApi(
-		group = "developers",
-		displayName = "Developers",
+	fun privateOpenApi(): GroupedOpenApi = groupedOpenApi(
+		group = "private",
+		displayName = "Private",
 	) { path -> !path.matchesPrefix("/v1/Protected") && !path.matchesPrefix("/v1/Public") }
 
 	private fun groupedOpenApi(

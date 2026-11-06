@@ -18,21 +18,21 @@ class OpenApiGroupsTest {
 	)
 
 	@Test
-	fun `managers document lists protected endpoints ignoring case`() {
+	fun `protected document lists protected endpoints ignoring case`() {
 		assertEquals(
 			setOf("/v1/Protected/origins", "/v1/protected/accounts"),
-			pathsIn(groups.managersOpenApi()),
+			pathsIn(groups.protectedOpenApi()),
 		)
 	}
 
 	@Test
-	fun `users document lists public endpoints ignoring case`() {
-		assertEquals(setOf("/v1/PUBLIC/profile"), pathsIn(groups.usersOpenApi()))
+	fun `public document lists public endpoints ignoring case`() {
+		assertEquals(setOf("/v1/PUBLIC/profile"), pathsIn(groups.publicOpenApi()))
 	}
 
 	@Test
-	fun `developers document lists every other endpoint`() {
-		assertEquals(setOf("/v1/PublicExtra", "/origins"), pathsIn(groups.developersOpenApi()))
+	fun `private document lists every other endpoint`() {
+		assertEquals(setOf("/v1/PublicExtra", "/origins"), pathsIn(groups.privateOpenApi()))
 	}
 
 	private fun pathsIn(group: GroupedOpenApi): Set<String> {
