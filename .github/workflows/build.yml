@@ -30,8 +30,8 @@ jobs:
       - name: Create .env file
         run: cp +env .env
 
-#      - name: Load .env
-#        run: bash .github/scripts/env.sh
+      - name: Load .env
+        run: bash .github/scripts/env.sh
 
       - name: Set up JDK
         uses: actions/setup-java@v6
