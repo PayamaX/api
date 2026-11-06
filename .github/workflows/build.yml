@@ -30,8 +30,8 @@ jobs:
       - name: Create .env file
         run: cp +env .env
 
-      - name: Load .env
-        run: bash .github/scripts/env.sh
+#      - name: Load .env
+#        run: bash .github/scripts/env.sh
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -96,6 +96,9 @@ jobs:
 
           build-args: |
             BUILD_MODE=CI
+            PAX_JDK_VER=${PAX_JDK_VER}
+            PAX_JRE_VER=${PAX_JRE_VER}
+            PAX_PG_PAX_DDL_FW_PWD=${PAX_PG_PAX_DDL_FW_PWD}
 
           tags: |
             ghcr.io/${{ env.OWNER_LOWERCASE }}/${{ github.event.repository.name }}-dev:${{ env.PAX_TAG }}
