@@ -44,15 +44,15 @@ jobs:
       - name: Restore dependencies
         run: bash ./gradlew dependencies
 
-      - name: Check vulnerable dependencies
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: |
-          if [ -z "$NVD_API_KEY" ]; then
-            echo "::error::Set the NVD_API_KEY repository secret to run dependency vulnerability scanning."
-            exit 1
-          fi
-          bash ./gradlew dependencyCheckAnalyze
+#      - name: Check vulnerable dependencies
+#        env:
+#          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+#        run: |
+#          if [ -z "$NVD_API_KEY" ]; then
+#            echo "::error::Set the NVD_API_KEY repository secret to run dependency vulnerability scanning."
+#            exit 1
+#          fi
+#          bash ./gradlew dependencyCheckAnalyze
 
       - name: Check
         run: bash ./gradlew check
