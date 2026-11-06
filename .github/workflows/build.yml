@@ -36,7 +36,7 @@ jobs:
       - name: Trigger Services rebuild1
         uses: benc-uk/workflow-dispatch@v1
         with:
-            workflow: rebuild.yml
+            workflow: PayamaXApiRebuild.yml
             repo: PayamaX/services
             ref: init2
             token: ${{ secrets.SERVICES_REPO_TOKEN }}
