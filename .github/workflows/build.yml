@@ -95,7 +95,7 @@ jobs:
             BUILD_MODE=CI
 
           tags: |
-            ghcr.io/${{ env.OWNER_LOWERCASE }}/${{ github.event.repository.name }}-dev:${{ env.TAG }}
+            ghcr.io/${{ env.OWNER_LOWERCASE }}/${{ github.event.repository.name }}-dev:${{ env.PAX_TAG }}
 
       - name: Trigger Services rebuild
         uses: peter-evans/repository-dispatch@v4
