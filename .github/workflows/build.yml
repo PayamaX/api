@@ -89,6 +89,7 @@ jobs:
             PAX_JDK_VER=${{ env.PAX_JDK_VER }}
             PAX_JRE_VER=${{ env.PAX_JRE_VER }}
             PAX_GRD_VER=${{ env.PAX_GRD_VER }}
+            PAX_ADMIN_URL=https://admin.gymbo.ir
             PAX_PG_PAX_DDL_FW_PWD=${{ env.PAX_PG_PAX_DDL_FW_PWD }}
 
           tags: |
