@@ -1,0 +1,94 @@
+# On push to main, commit SQL files that exist here and not yet in PayamaX/services.
+# Secret SERVICES_REPO_TOKEN: fine-grained PAT with contents write on PayamaX/services.
+name: Sync migrations
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - src/main/resources/db/migration/**
+      - .github/workflows/db.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db
+  cancel-in-progress: false
+
+env:
+  SERVICES_REPOSITORY: PayamaX/services
+  SERVICES_BRANCH: main
+  MIGRATIONS_SOURCE: src/main/resources/db/migration
+  MIGRATIONS_TARGET: Postgres/Engine/migrations
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check services token
+        env:
+          SERVICES_REPO_TOKEN: ${{ secrets.SERVICES_REPO_TOKEN }}
+        run: |
+          if [ -z "${SERVICES_REPO_TOKEN}" ]; then
+            echo "::error::Repository secret SERVICES_REPO_TOKEN is missing. Create a fine-grained PAT with contents write on ${SERVICES_REPOSITORY} and store it as SERVICES_REPO_TOKEN."
+            exit 1
+          fi
+
+      - name: Checkout api
+        uses: actions/checkout@v7
+        with:
+          path: api
+
+      - name: Checkout services
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.SERVICES_REPOSITORY }}
+          ref: ${{ env.SERVICES_BRANCH }}
+          token: ${{ secrets.SERVICES_REPO_TOKEN }}
+          path: services
+
+      - name: Commit missing migrations
+        run: |
+          set -euo pipefail
+
+          src="${GITHUB_WORKSPACE}/api/${MIGRATIONS_SOURCE}"
+          dst="${GITHUB_WORKSPACE}/services/${MIGRATIONS_TARGET}"
+
+          if [ ! -d "$src" ]; then
+            echo "No ${MIGRATIONS_SOURCE} directory in api."
+            exit 0
+          fi
+
+          mkdir -p "$dst"
+
+          copied=0
+          shopt -s nullglob
+          for file in "$src"/*.sql; do
+            name="$(basename "$file")"
+            target="$dst/$name"
+            if [ -f "$target" ]; then
+              if ! cmp -s "$file" "$target"; then
+                echo "::error::${name} already exists in services with different content. Applied migrations cannot be edited."
+                exit 1
+              fi
+              continue
+            fi
+            cp "$file" "$target"
+            echo "Adding ${name}"
+            copied=1
+          done
+
+          if [ "$copied" -eq 0 ]; then
+            echo "No missing migrations."
+            exit 0
+          fi
+
+          cd "${GITHUB_WORKSPACE}/services"
+          git add -- "${MIGRATIONS_TARGET}"
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "Add migrations from PayamaX/api@${GITHUB_SHA}"
+          git push origin "HEAD:${SERVICES_BRANCH}"

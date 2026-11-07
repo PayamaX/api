@@ -1,0 +1,44 @@
+# Global Docker gnore
+# Version 260921.0950
+# Version 260802.1909
+# Version 260802.1847
+# Version 260709.1344
+# Version 260702.0042
+# Version 260701.2152
+# Version 260614.0927
+# Version 260610.1214
+# Version 260610.1211
+# Version 260604.1109
+# Version 260604.1049
+
+**/.classpath
+**/.dockerignore
+**/.env
+**/.git
+**/.gitignore
+**/.project
+**/.settings
+**/.toolstarget
+**/.vs
+**/.vscode
+**/.idea
+**/*.*proj.user
+**/*.dbmdl
+**/*.jfm
+**/azds.yaml
+**/bin
+**/charts
+**/docker-compose*
+**/Dockerfile*
+**/node_modules
+**/npm-debug.log
+**/obj
+**/secrets.dev.yaml
+**/values.dev.yaml
+LICENSE
+README.md
+!**/.gitignore
+!.git/HEAD
+!.git/config
+!.git/packed-refs
+!.git/refs/heads/**
