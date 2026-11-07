@@ -9,8 +9,6 @@ import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.ImagePullPolicy
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.lifecycle.Startables
 import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
@@ -41,8 +39,10 @@ private class BindHostPort(
  * Postgres and Keycloak from the services images (`ghcr.io/payamax/pgxdb-go` and
  * `ghcr.io/payamax/kcxkc-go`). The tag is `PAX_TAG` when that is set, otherwise the
  * current git branch, otherwise `main` — the same fallback as `tag.ps1`.
+ *
+ * Started once for the test run and kept until the JVM exits, so every test
+ * class shares the same database and Keycloak.
  */
-@Testcontainers
 abstract class TestsSuper {
 	protected fun readerToken(): String = accessToken(REALM, TRUSTED_CLIENT, USERNAME, PASSWORD)
 
@@ -60,9 +60,7 @@ abstract class TestsSuper {
 		private val keycloakPort = freePort()
 		private val http: HttpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()
 
-		@Container
-		@JvmField
-		val postgres: PostgreSQLContainer = PostgreSQLContainer(
+		private val postgres: PostgreSQLContainer = PostgreSQLContainer(
 			DockerImageName.parse("ghcr.io/payamax/pgxdb-go:$tag").asCompatibleSubstituteFor("postgres"),
 		)
 			.withImagePullPolicy(LocalImages)
@@ -76,9 +74,7 @@ abstract class TestsSuper {
 					.withStartupTimeout(Duration.ofMinutes(3)),
 			)
 
-		@Container
-		@JvmField
-		val keycloak: GenericContainer<*> = GenericContainer(
+		private val keycloak: GenericContainer<*> = GenericContainer(
 			DockerImageName.parse("ghcr.io/payamax/kcxkc-go:$tag"),
 		)
 			.withImagePullPolicy(LocalImages)
@@ -100,7 +96,11 @@ abstract class TestsSuper {
 			)
 
 		init {
-			Startables.deepStart(postgres, keycloak).join()
+			try {
+				Startables.deepStart(postgres, keycloak).join()
+			} catch (failure: Throwable) {
+				throw IllegalStateException(startupFailure(failure), failure)
+			}
 		}
 
 		@DynamicPropertySource
@@ -158,6 +158,39 @@ abstract class TestsSuper {
 		private fun encode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8)
 
 		private fun freePort(): Int = java.net.ServerSocket(0).use { it.localPort }
+
+		private fun startupFailure(failure: Throwable): String {
+			val postgresImage = "ghcr.io/payamax/pgxdb-go:$tag"
+			val keycloakImage = "ghcr.io/payamax/kcxkc-go:$tag"
+			return buildString {
+				appendLine("Failed to start the Postgres and Keycloak containers used by tests.")
+				appendLine("Postgres image: $postgresImage (${localImage(postgresImage)})")
+				appendLine("Keycloak image: $keycloakImage (${localImage(keycloakImage)})")
+				appendLine("Pull policy: local images only. Testcontainers does not pull, so a missing image fails while creating the container.")
+				append(causeChain(failure))
+			}
+		}
+
+		private fun localImage(image: String): String = runCatching {
+			val process = ProcessBuilder("docker", "image", "inspect", "--format", "{{.Id}}", image)
+				.redirectErrorStream(true)
+				.start()
+			val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
+			if (process.waitFor() == 0 && output.isNotEmpty()) "present locally" else "not present locally: $output"
+		}.getOrElse { error -> "could not inspect: ${error.javaClass.simpleName}: ${error.message}" }
+
+		private fun causeChain(failure: Throwable): String {
+			val seen = mutableSetOf<Throwable>()
+			val lines = mutableListOf<String>()
+			var current: Throwable? = failure
+			while (current != null && seen.add(current)) {
+				val frame = current.stackTrace.firstOrNull()
+				val where = if (frame == null) "" else " (${frame.fileName}:${frame.lineNumber})"
+				lines += "${current.javaClass.name}$where: ${current.message}"
+				current = current.cause
+			}
+			return lines.joinToString(separator = "\n")
+		}
 
 		private fun imageTag(): String {
 			System.getenv("PAX_TAG")?.takeIf { it.isNotBlank() }?.let { return it }

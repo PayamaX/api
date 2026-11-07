@@ -1,4 +1,4 @@
-package no1.payamax.api.r2dbc
+package no1.payamax.api.config.http.r2dbc
 
 import org.reactivestreams.Publisher
 import org.springframework.context.annotation.Bean

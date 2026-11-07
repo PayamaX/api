@@ -1,4 +1,4 @@
-package no1.payamax.api.http
+package no1.payamax.api.config.http
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean

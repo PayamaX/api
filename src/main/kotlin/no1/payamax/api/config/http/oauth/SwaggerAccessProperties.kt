@@ -1,4 +1,4 @@
-package no1.payamax.api.oauth
+package no1.payamax.api.config.http.oauth
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.security.web.util.matcher.IpAddressMatcher

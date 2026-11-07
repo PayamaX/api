@@ -7,6 +7,9 @@ import java.util.*
 @Service
 class PredefinedOriginCoreService(private val repository: PredefinedOriginRepository) : PredefinedOriginCoreContract {
 	override suspend fun persist(input: PredefinedOriginProtectedInput): PredefinedOriginEntity {
+		if (input.rank !in 0.0..1.0) {
+			throw InvalidValueException("Rank must be between 0 and 1.")
+		}
 		var persisted = repository.findOneByOrigin(input.origin)
 		if (persisted != null) {
 			if (input.globalId != null && persisted.globalId != input.globalId) {

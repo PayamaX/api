@@ -2,7 +2,7 @@ package no1.payamax.api.modules.predefinedorigin
 
 import jakarta.persistence.Table as JpaTable
 import jakarta.persistence.UniqueConstraint
-import no1.payamax.api.r2dbc.Sequenced
+import no1.payamax.api.config.http.r2dbc.Sequenced
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
 import java.util.UUID

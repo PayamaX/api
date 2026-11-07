@@ -6,6 +6,9 @@ import ch.qos.logback.core.read.ListAppender
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletRequestWrapper
 import jakarta.servlet.http.HttpServletResponse
+import no1.payamax.api.config.http.HttpLogConfiguration
+import no1.payamax.api.config.http.HttpLogProperties
+import no1.payamax.api.config.http.HttpTrafficLoggingFilter
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows

@@ -1,5 +1,7 @@
 package no1.payamax.api.oauth
 
+import no1.payamax.api.config.http.oauth.SwaggerAccessFilter
+import no1.payamax.api.config.http.oauth.SwaggerAccessProperties
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse

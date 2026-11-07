@@ -1,8 +1,8 @@
 package no1.payamax.api.modules.predefinedorigin
 
 import no1.payamax.api.exceptions.EntityNotFoundException
-import no1.payamax.api.r2dbc.Sorts
-import no1.payamax.api.r2dbc.toPage
+import no1.payamax.api.config.http.r2dbc.Sorts
+import no1.payamax.api.config.http.r2dbc.toPage
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service

@@ -1,4 +1,4 @@
-package no1.payamax.api.oauth
+package no1.payamax.api.config.http.oauth
 
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI

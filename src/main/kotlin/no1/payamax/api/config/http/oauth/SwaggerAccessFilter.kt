@@ -1,4 +1,4 @@
-package no1.payamax.api.oauth
+package no1.payamax.api.config.http.oauth
 
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest

@@ -1,4 +1,4 @@
-package no1.payamax.api.http
+package no1.payamax.api.config.http
 
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ReadListener

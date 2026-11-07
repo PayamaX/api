@@ -1,4 +1,4 @@
-package no1.payamax.api.oauth
+package no1.payamax.api.config.http.oauth
 
 import jakarta.servlet.http.HttpServletRequest
 import org.springdoc.core.properties.SwaggerUiConfigProperties
@@ -13,6 +13,7 @@ import org.springframework.core.io.Resource
 import org.springframework.web.servlet.resource.ResourceTransformerChain
 import org.springframework.web.servlet.resource.TransformedResource
 import java.nio.charset.StandardCharsets
+import kotlin.text.iterator
 
 @Configuration
 class SwaggerUiLogoutConfig(
