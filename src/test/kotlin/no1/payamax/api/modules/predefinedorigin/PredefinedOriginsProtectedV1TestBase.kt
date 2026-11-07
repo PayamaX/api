@@ -38,6 +38,14 @@ abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
 		}
 	}
 
+	protected fun getOrigin(globalId: UUID, token: String? = null): ResultActions {
+		var request = get("$ORIGINS/$globalId").accept(MediaType.APPLICATION_JSON)
+		if (token != null) {
+			request = request.header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+		}
+		return exchange(request)
+	}
+
 	protected fun getPage(token: String? = null, page: Int = 0, size: Int = 20, sort: String? = null): ResultActions {
 		var request = get(ORIGINS)
 			.param("page", page.toString())
@@ -65,6 +73,17 @@ abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
 
 	protected fun deleteOrigin(globalId: UUID, token: String? = null): ResultActions {
 		var request = delete("$ORIGINS/$globalId").accept(MediaType.APPLICATION_JSON)
+		if (token != null) {
+			request = request.header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+		}
+		return exchange(request)
+	}
+
+	protected fun deleteOrigins(globalIds: List<UUID>, token: String? = null): ResultActions {
+		var request = delete(ORIGINS).accept(MediaType.APPLICATION_JSON)
+		if (globalIds.isNotEmpty()) {
+			request = request.param("globalIds", *globalIds.map { it.toString() }.toTypedArray())
+		}
 		if (token != null) {
 			request = request.header(HttpHeaders.AUTHORIZATION, "Bearer $token")
 		}

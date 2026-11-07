@@ -27,6 +27,8 @@ internal val swaggerDocumentationPatterns: List<String> = listOf(
 /**
  * Rejects Swagger UI and OpenAPI requests unless the client address is inside
  * [SwaggerAccessProperties.allowedIpRanges] or the caller has ROLE_ADMIN.
+ * Each range is a single address or a CIDR prefix. An address that matches
+ * none of them is logged, including when ROLE_ADMIN still allows the request.
  *
  * Register this after [ExceptionTranslationFilter]. An anonymous caller is then
  * asked to authenticate, and any other caller receives 403. The address compared
@@ -40,7 +42,8 @@ class SwaggerAccessFilter(
 		properties.validate()
 	}
 
-	private val ranges = properties.allowedRanges().map { IpAddressMatcher(it) }
+	private val allowedRanges = properties.allowedRanges()
+	private val ranges = allowedRanges.map { IpAddressMatcher(it) }
 	private val documentation: RequestMatcher = OrRequestMatcher(
 		swaggerDocumentationPatterns.map { PathPatternRequestMatcher.pathPattern(it) },
 	)
@@ -67,12 +70,23 @@ class SwaggerAccessFilter(
 
 	private fun fromAllowedNetwork(request: HttpServletRequest): Boolean {
 		val remote = request.remoteAddr
-		if (ranges.any { it.matches(remote) }) {
+		if (matches(remote)) {
 			return true
 		}
-		val mapped = ipv4FromMappedAddress(remote) ?: return false
-		return ranges.any { it.matches(mapped) }
+		val mapped = ipv4FromMappedAddress(remote)
+		if (mapped != null && matches(mapped)) {
+			return true
+		}
+		log.warn(
+			"Swagger IP check failed for {} (IPv4-mapped {}); allowed ranges {}",
+			remote,
+			mapped ?: "n/a",
+			allowedRanges,
+		)
+		return false
 	}
+
+	private fun matches(address: String): Boolean = ranges.any { it.matches(address) }
 
 	private fun hasAdminRole(): Boolean {
 		val authentication = SecurityContextHolder.getContext().authentication ?: return false

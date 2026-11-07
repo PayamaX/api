@@ -1,5 +1,9 @@
 package no1.payamax.api.oauth
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import no1.payamax.api.config.http.oauth.SwaggerAccessFilter
 import no1.payamax.api.config.http.oauth.SwaggerAccessProperties
 import org.junit.jupiter.api.AfterEach
@@ -8,6 +12,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.security.access.AccessDeniedException
@@ -174,6 +179,52 @@ class SwaggerAccessFilterTest {
 	}
 
 	@Test
+	fun `logs a failed IP check with the remote address and the configured ranges`() {
+		// Arrange
+		val outside = request("/v3/api-docs", "8.8.8.8")
+		val mapped = request("/v3/api-docs.yaml", "::ffff:203.0.113.10")
+
+		// Act
+		val outsideMessages = capture { blocks(filter, outside) }
+		val mappedMessages = capture { blocks(filter, mapped) }
+
+		// Assert
+		assertTrue(outsideMessages.any { it == "Swagger IP check failed for 8.8.8.8 (IPv4-mapped n/a); allowed ranges [127.0.0.1, ::1, 172.16.0.0/12, 10.8.0.0/16]" })
+		assertTrue(mappedMessages.any { it == "Swagger IP check failed for ::ffff:203.0.113.10 (IPv4-mapped 203.0.113.10); allowed ranges [127.0.0.1, ::1, 172.16.0.0/12, 10.8.0.0/16]" })
+	}
+
+	@Test
+	fun `logs a failed IP check when ROLE_ADMIN is allowed from outside the ranges`() {
+		// Arrange
+		authenticate("ROLE_ADMIN")
+		val current = request("/swagger-ui/index.html", "8.8.8.8")
+
+		// Act
+		val messages = capture {
+			val continued = passes(filter, current)
+			assertTrue(continued)
+		}
+
+		// Assert
+		assertTrue(messages.any { it.contains("Swagger IP check failed for 8.8.8.8") })
+	}
+
+	@Test
+	fun `does not log an IP check failure for an address inside a CIDR range`() {
+		// Arrange
+		val current = request("/v3/api-docs", "172.18.0.4")
+
+		// Act
+		val messages = capture {
+			val continued = passes(filter, current)
+			assertTrue(continued)
+		}
+
+		// Assert
+		assertTrue(messages.none { it.contains("Swagger IP check failed") })
+	}
+
+	@Test
 	fun `rejects a range that is not an IP address`() {
 		// Arrange
 		val properties = SwaggerAccessProperties().apply { allowedIpRanges = listOf("localhost") }
@@ -183,6 +234,22 @@ class SwaggerAccessFilterTest {
 
 		// Assert
 		assertTrue(error.message!!.contains("localhost"))
+	}
+
+	private fun capture(block: () -> Unit): List<String> {
+		val logger = LoggerFactory.getLogger(SwaggerAccessFilter::class.java) as Logger
+		val appender = ListAppender<ILoggingEvent>()
+		appender.start()
+		val previousLevel = logger.level
+		logger.level = Level.WARN
+		logger.addAppender(appender)
+		try {
+			block()
+			return appender.list.map { it.formattedMessage }
+		} finally {
+			logger.detachAppender(appender)
+			logger.level = previousLevel
+		}
 	}
 
 	private fun passes(filter: SwaggerAccessFilter, request: MockHttpServletRequest): Boolean {
