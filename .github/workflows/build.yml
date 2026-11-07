@@ -1,32 +1,104 @@
-name: Use Private NuGet Package
+name: Deploy Development & Production
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-    env:
-      NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - name: Checkout
+        uses: actions/checkout@v7
         with:
-          dotnet-version: '9.0'
+          fetch-depth: 1
 
-      - name: Add GitHub Packages Source
+      - name: Resolve PAX_TAG
+        run: bash .github/scripts/tag.sh
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        
+      - name: Load +env
         run: |
-          dotnet nuget add source --username behzadian --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Farayan/index.json"
+          cat +env >> $GITHUB_ENV
 
-      - name: Restore Dependencies
-        run: dotnet restore
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
 
-      - name: Build Project
-        run: dotnet build --configuration Release
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-disabled: false
+
+      - name: Restore dependencies
+        run: bash ./gradlew dependencies
+
+      - name: Check
+        env:
+          PAX_TC_PULL_POLICY: always
+        run: bash ./gradlew check
+
+      - name: Build
+        run: bash ./gradlew assemble -x test
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Lowercase repository owner
+        run: |
+          echo "OWNER_LOWERCASE=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Create Root CA file
+        env:
+          ROOT_CA: ${{ secrets.ROOT_CA }}
+        run: |
+          mkdir -p assets/tls
+          echo "$ROOT_CA" > assets/tls/root-ca.pem
+
+      - name: Build and push images
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+          provenance: false
+          sbom: false
+
+          build-args: |
+            BUILD_MODE=CI
+            PAX_JDK_VER=${{ env.PAX_JDK_VER }}
+            PAX_JRE_VER=${{ env.PAX_JRE_VER }}
+            PAX_GRD_VER=${{ env.PAX_GRD_VER }}
+            PAX_ADMIN_URL=https://admin.gymbo.ir
+            PAX_PG_PAX_DDL_FW_PWD=${{ env.PAX_PG_PAX_DDL_FW_PWD }}
+
+          tags: |
+            ghcr.io/${{ env.OWNER_LOWERCASE }}/${{ github.event.repository.name }}-dev:${{ env.PAX_TAG }}
+
+      - name: Trigger Services rebuild
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.SERVICES_REPO_TOKEN }}
+          repository: PayamaX/services
+          event-type: api-image-published
+          client-payload: '{"PAX_TAG":"${{ env.PAX_TAG }}"}'

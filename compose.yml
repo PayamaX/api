@@ -1,0 +1,160 @@
+services:
+    apidev:
+        image: ghcr.io/payamax/api-local:${PAX_TAG}
+        build:
+            context: .
+            dockerfile: Dockerfile
+            args:
+                PAX_JDK_VER: ${PAX_JDK_VER}
+                PAX_JRE_VER: ${PAX_JRE_VER}
+        container_name: pax__api__api
+        restart: always
+        ports:
+            - "19100:8080"
+        depends_on:
+            pgdb:
+                condition: service_healthy
+            oseg:
+                condition: service_healthy
+            kc:
+                condition: service_healthy
+        environment:
+            - StorageConfig__AccessKey=FILE_S3_KEY
+            - StorageConfig__SecretKey=SECRET33
+            - SPRING_FLYWAY_USER=pax_ddl_fw
+            - SPRING_FLYWAY_PASSWORD=${PAX_PG_PAX_DDL_FW_PWD}
+            - PAX_PG_PAX_DDL_FW_PWD=${PAX_PG_PAX_DDL_FW_PWD}
+            - PAX_ADMIN_URL=${PAX_ADMIN_URL}
+        volumes:
+            - ./assets/tls/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
+            - ./assets/tls/client.pem:/usr/share/opensearch/config/client.pem
+            - ./assets/tls/client-key.pem:/usr/share/opensearch/config/client-key.pem
+    
+    sw-mt:
+        image: chrislusf/seaweedfs:latest
+#       pull_policy:  never
+        container_name: pax__api__sw_master
+        hostname: fb-sw-master
+        command: master
+    
+    sw-vl:
+        image: chrislusf/seaweedfs:latest
+#       pull_policy:  never
+        container_name: pax__api__sw_volume
+        hostname: fb-sw-volume
+        command: volume -mserver=sw-mt:9333 -dir=/data
+        depends_on:
+            - sw-mt
+        volumes:
+            - sw_vl:/data
+    
+    sw-fl:
+        image: chrislusf/seaweedfs:latest
+#       pull_policy:  never
+        container_name: pax__api__sw_filer
+        hostname: fb-sw-filer
+        command: filer -master=sw-mt:9333
+        depends_on:
+            - sw-mt
+    
+    sw-s3:
+        image: chrislusf/seaweedfs:latest
+#       pull_policy:  never
+        container_name: pax__api__sw_s3
+        hostname: fb-sw-s3
+        command: s3 -filer=sw-fl:8888
+        environment:
+            - AWS_ACCESS_KEY_ID=FILE_S3_KEY
+            - AWS_SECRET_ACCESS_KEY=SECRET33
+        expose:
+            - "8333"
+        depends_on:
+            - sw-fl
+    
+    nginx:
+        image: ghcr.io/payamax/nginx-go:${PAX_TAG}
+#       pull_policy:  never
+        container_name: pax__api__nginx
+        restart: always
+        ports:
+            - "19000:80"
+        depends_on:
+            - sw-s3
+            - apidev
+            - pgui
+            - osui
+
+    pgdb:
+        image: ghcr.io/payamax/pgxdb-go:${PAX_TAG}
+#       pull_policy:  never
+        container_name: pax__api__pg_db
+        restart: always
+        ports:
+            - "19101:5432"
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U pg -d fb" ]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    pgui:
+        image: ghcr.io/payamax/pgxui-go:${PAX_TAG}
+#       pull_policy:  never
+        container_name: pax__api__pg_ui
+        restart: always
+        ports:
+            - "19102:80"
+        depends_on:
+            pgdb:
+                condition: service_healthy
+
+    kc:
+        image: ghcr.io/payamax/kc-go:${PAX_TAG}
+#        pull_policy:  always
+        container_name: pax__api__kc_eg
+        restart: always
+        ports:
+            - "19103:8080"
+        depends_on:
+            pgdb:
+                condition: service_healthy
+        healthcheck:
+            test:
+              [
+                  "CMD-SHELL",
+                  "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;if [ $? -eq 0 ]; then echo 'Healthcheck Successful';exit 0;else echo 'Healthcheck Failed';exit 1;fi;",
+              ]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 60s
+    oseg:
+        image: ghcr.io/payamax/osxeg-go:${PAX_TAG}
+#       pull_policy:  never
+        container_name: pax__api__os_eg
+        restart: always
+        ports:
+            - "19104:8080"
+            - "19105:8081"
+        depends_on:
+            pgdb:
+                condition: service_healthy
+        healthcheck:
+            test: [ "CMD", "curl", "-k", "https://localhost:9200" ]
+            interval: 30s
+            timeout: 10s
+            retries: 12
+            start_period: 60s
+    osui:
+        image: ghcr.io/payamax/osxui-go:${PAX_TAG}
+#       pull_policy:  never
+        container_name: pax__api__os_ui
+        restart: always
+        ports:
+            - "19106:5601"
+        depends_on:
+            oseg:
+                condition: service_healthy
+volumes:
+    sw_vl:
+        name: pax__api__sw_vl
