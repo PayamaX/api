@@ -24,6 +24,7 @@ services:
             - SPRING_FLYWAY_USER=pax_ddl_fw
             - SPRING_FLYWAY_PASSWORD=${PAX_PG_PAX_DDL_FW_PWD}
             - PAX_PG_PAX_DDL_FW_PWD=${PAX_PG_PAX_DDL_FW_PWD}
+            - PAX_ADMIN_URL=${PAX_ADMIN_URL}
         volumes:
             - ./assets/tls/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
             - ./assets/tls/client.pem:/usr/share/opensearch/config/client.pem

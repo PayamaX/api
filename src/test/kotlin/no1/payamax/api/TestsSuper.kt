@@ -112,6 +112,7 @@ abstract class TestsSuper {
 			registry.add("oauth2.issuers[0]") { issuer }
 			registry.add("oauth2.requires-secure-metadata") { "false" }
 			registry.add("http-log.enabled") { "false" }
+			registry.add("PAX_ADMIN_URL") { "http://localhost:5173" }
 			registry.add("spring.r2dbc.url") { r2dbcUrl("pax") }
 			registry.add("spring.r2dbc.username") { "pax_dml_api" }
 			registry.add("spring.r2dbc.password") { "password" }

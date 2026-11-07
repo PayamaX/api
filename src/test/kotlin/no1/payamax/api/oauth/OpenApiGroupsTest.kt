@@ -19,20 +19,38 @@ class OpenApiGroupsTest {
 
 	@Test
 	fun `protected document lists protected endpoints ignoring case`() {
-		assertEquals(
-			setOf("/v1/Protected/origins", "/v1/protected/accounts"),
-			pathsIn(groups.protectedOpenApi()),
-		)
+		// Arrange
+		val group = groups.protectedOpenApi()
+
+		// Act
+		val documented = pathsIn(group)
+
+		// Assert
+		assertEquals(setOf("/v1/Protected/origins", "/v1/protected/accounts"), documented)
 	}
 
 	@Test
 	fun `public document lists public endpoints ignoring case`() {
-		assertEquals(setOf("/v1/PUBLIC/profile"), pathsIn(groups.publicOpenApi()))
+		// Arrange
+		val group = groups.publicOpenApi()
+
+		// Act
+		val documented = pathsIn(group)
+
+		// Assert
+		assertEquals(setOf("/v1/PUBLIC/profile"), documented)
 	}
 
 	@Test
 	fun `private document lists every other endpoint`() {
-		assertEquals(setOf("/v1/PublicExtra", "/origins"), pathsIn(groups.privateOpenApi()))
+		// Arrange
+		val group = groups.privateOpenApi()
+
+		// Act
+		val documented = pathsIn(group)
+
+		// Assert
+		assertEquals(setOf("/v1/PublicExtra", "/origins"), documented)
 	}
 
 	private fun pathsIn(group: GroupedOpenApi): Set<String> {

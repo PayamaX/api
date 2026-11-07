@@ -2,8 +2,8 @@ package no1.payamax.api.r2dbc
 
 import no1.payamax.api.exceptions.InvalidValueException
 import no1.payamax.api.modules.predefinedorigin.PredefinedOriginEntity
-import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.PageRequest
@@ -16,53 +16,72 @@ class SortsTest {
 
 	@Test
 	fun `an unknown sort property is a bad request`() {
+		// Arrange
 		val pageable = PageRequest.of(0, 1, Sort.by("[\"string\"]"))
 
+		// Act
 		val ex = assertThrows(InvalidValueException::class.java) {
 			sorts.require(pageable, PredefinedOriginEntity::class.java)
 		}
 
+		// Assert
 		assertEquals(HttpStatus.BAD_REQUEST, ex.statusCode)
 		assertEquals("Invalid sort property '[\"string\"]'.", ex.body.detail)
 	}
 
 	@Test
 	fun `a sort name that is not a column is a bad request`() {
+		// Arrange
 		val pageable = PageRequest.of(0, 1, Sort.by("string"))
 
+		// Act
 		val ex = assertThrows(InvalidValueException::class.java) {
 			sorts.require(pageable, PredefinedOriginEntity::class.java)
 		}
 
+		// Assert
 		assertEquals("Invalid sort property 'string'.", ex.body.detail)
 	}
 
 	@Test
 	fun `the first unknown property is reported when several are sent`() {
+		// Arrange
 		val pageable = PageRequest.of(0, 1, Sort.by("origin", "missing"))
 
+		// Act
 		val ex = assertThrows(InvalidValueException::class.java) {
 			sorts.require(pageable, PredefinedOriginEntity::class.java)
 		}
 
+		// Assert
 		assertEquals("Invalid sort property 'missing'.", ex.body.detail)
 	}
 
 	@Test
 	fun `entity properties and their columns are accepted`() {
+		// Arrange
 		val pageable = PageRequest.of(
 			0,
 			1,
 			Sort.by(Sort.Order.asc("origin"), Sort.Order.desc("ownerGlobalId"), Sort.Order.asc("owner_global_id")),
 		)
 
-		assertDoesNotThrow { sorts.require(pageable, PredefinedOriginEntity::class.java) }
+		// Act
+		val failure = runCatching { sorts.require(pageable, PredefinedOriginEntity::class.java) }.exceptionOrNull()
+
+		// Assert
+		assertNull(failure)
 	}
 
 	@Test
 	fun `an unsorted page is accepted`() {
-		assertDoesNotThrow {
-			sorts.require(PageRequest.of(0, 1), PredefinedOriginEntity::class.java)
-		}
+		// Arrange
+		val pageable = PageRequest.of(0, 1)
+
+		// Act
+		val failure = runCatching { sorts.require(pageable, PredefinedOriginEntity::class.java) }.exceptionOrNull()
+
+		// Assert
+		assertNull(failure)
 	}
 }

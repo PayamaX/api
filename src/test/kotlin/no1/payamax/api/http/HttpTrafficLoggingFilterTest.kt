@@ -25,20 +25,29 @@ class HttpTrafficLoggingFilterTest {
 
 	@Test
 	fun `logging is disabled unless http-log enabled is true`() {
+		// Arrange
+		val disabled = contextRunner.withPropertyValues("http-log.enabled=false")
+		val omitted = contextRunner
+		val enabled = contextRunner.withPropertyValues("http-log.enabled=true")
+		var disabledPresent = true
+		var omittedPresent = true
+		var enabledPresent = false
+
+		// Act
+		disabled.run { context -> disabledPresent = context.containsBean("httpTrafficLoggingFilter") }
+		omitted.run { context -> omittedPresent = context.containsBean("httpTrafficLoggingFilter") }
+		enabled.run { context -> enabledPresent = context.containsBean("httpTrafficLoggingFilter") }
+
+		// Assert
 		assertFalse(HttpLogProperties().enabled)
-		contextRunner.withPropertyValues("http-log.enabled=false").run { context ->
-			assertFalse(context.containsBean("httpTrafficLoggingFilter"))
-		}
-		contextRunner.run { context ->
-			assertFalse(context.containsBean("httpTrafficLoggingFilter"))
-		}
-		contextRunner.withPropertyValues("http-log.enabled=true").run { context ->
-			assertTrue(context.containsBean("httpTrafficLoggingFilter"))
-		}
+		assertFalse(disabledPresent)
+		assertFalse(omittedPresent)
+		assertTrue(enabledPresent)
 	}
 
 	@Test
 	fun `logs request and response headers and the request body`() {
+		// Arrange
 		val request = MockHttpServletRequest("POST", "/origins")
 		request.queryString = "q=1"
 		request.protocol = "HTTP/1.1"
@@ -48,13 +57,15 @@ class HttpTrafficLoggingFilterTest {
 		request.addHeader("Accept", "text/plain")
 		request.addHeader("X-Request-Id", "req-1")
 		request.setContent("""{"name":"Pāx"}""".toByteArray(UTF_8))
-
 		val response = MockHttpServletResponse()
+		var body = ""
+
+		// Act
 		val message = capture {
 			HttpTrafficLoggingFilter().doFilter(request, response) { req, res ->
 				val httpRequest = req as HttpServletRequest
 				val httpResponse = res as HttpServletResponse
-				assertEquals("""{"name":"Pāx"}""", httpRequest.inputStream.readBytes().toString(UTF_8))
+				body = httpRequest.inputStream.readBytes().toString(UTF_8)
 				httpResponse.contentType = MediaType.APPLICATION_JSON_VALUE
 				httpResponse.characterEncoding = UTF_8.name()
 				httpResponse.setHeader("X-Response-Id", "resp-1")
@@ -63,6 +74,8 @@ class HttpTrafficLoggingFilterTest {
 			}
 		}
 
+		// Assert
+		assertEquals("""{"name":"Pāx"}""", body)
 		assertEquals("""{"ok":true}""", response.contentAsString)
 		assertEquals(201, response.status)
 		assertTrue(message.contains("HTTP exchange POST /origins?q=1 HTTP/1.1 -> 201"))
@@ -77,26 +90,31 @@ class HttpTrafficLoggingFilterTest {
 
 	@Test
 	fun `logs a request body when content length is unknown and the request is wrapped`() {
+		// Arrange
 		val request = object : MockHttpServletRequest("POST", "/origins") {
 			override fun getContentLength(): Int = -1
 			override fun getContentLengthLong(): Long = -1
 		}
 		request.setContent("""{"name":"Pāx"}""".toByteArray(UTF_8))
 		val wrapped = HttpServletRequestWrapper(request)
-
 		val response = MockHttpServletResponse()
+		var body = ""
+
+		// Act
 		val message = capture {
 			HttpTrafficLoggingFilter().doFilter(wrapped, response) { req, _ ->
-				val httpRequest = req as HttpServletRequest
-				assertEquals("""{"name":"Pāx"}""", httpRequest.inputStream.readBytes().toString(UTF_8))
+				body = (req as HttpServletRequest).inputStream.readBytes().toString(UTF_8)
 			}
 		}
 
+		// Assert
+		assertEquals("""{"name":"Pāx"}""", body)
 		assertTrue(message.contains("request body:\n{\"name\":\"Pāx\"}"))
 	}
 
 	@Test
 	fun `logs multipart field bodies and file metadata without file bytes`() {
+		// Arrange
 		val fileBytes = "FILE_BYTES_SHOULD_NOT_APPEAR".toByteArray(UTF_8)
 		val request = MockHttpServletRequest("POST", "/upload")
 		request.contentType = "multipart/form-data; boundary=----test"
@@ -107,12 +125,15 @@ class HttpTrafficLoggingFilterTest {
 		request.addPart(file)
 
 		val response = MockHttpServletResponse()
+
+		// Act
 		val message = capture {
 			HttpTrafficLoggingFilter().doFilter(request, response) { _, res ->
 				(res as HttpServletResponse).status = 202
 			}
 		}
 
+		// Assert
 		assertTrue(message.contains("part name=title"))
 		assertTrue(message.contains("part body:\nfield-value"))
 		assertTrue(message.contains("part name=document; filename=notes.txt; contentType=text/plain; size=${fileBytes.size}"))
@@ -123,9 +144,12 @@ class HttpTrafficLoggingFilterTest {
 
 	@Test
 	fun `returns a binary response without logging its bytes`() {
+		// Arrange
 		val request = MockHttpServletRequest("GET", "/file")
 		val response = MockHttpServletResponse()
 		val payload = "BINARY_BODY_SHOULD_NOT_APPEAR".toByteArray(UTF_8)
+
+		// Act
 		val message = capture {
 			HttpTrafficLoggingFilter().doFilter(request, response) { _, res ->
 				val httpResponse = res as HttpServletResponse
@@ -135,6 +159,7 @@ class HttpTrafficLoggingFilterTest {
 			}
 		}
 
+		// Assert
 		assertEquals(payload.toList(), response.contentAsByteArray.toList())
 		assertTrue(message.contains("Content-Disposition: attachment; filename=\"report.bin\""))
 		assertFalse(message.contains("response body:"))
@@ -143,20 +168,24 @@ class HttpTrafficLoggingFilterTest {
 
 	@Test
 	fun `logs the request when processing fails and still throws`() {
+		// Arrange
 		val request = MockHttpServletRequest("POST", "/origins")
 		request.contentType = MediaType.APPLICATION_JSON_VALUE
 		request.setContent("""{"a":1}""".toByteArray(UTF_8))
 		val response = MockHttpServletResponse()
+		var failure: IllegalStateException? = null
 
+		// Act
 		val message = capture {
-			val failure = assertThrows(IllegalStateException::class.java) {
+			failure = assertThrows(IllegalStateException::class.java) {
 				HttpTrafficLoggingFilter().doFilter(request, response) { _, _ ->
 					throw IllegalStateException("rejected")
 				}
 			}
-			assertEquals("rejected", failure.message)
 		}
 
+		// Assert
+		assertEquals("rejected", failure!!.message)
 		assertTrue(message.contains("failed with java.lang.IllegalStateException: rejected"))
 		assertTrue(message.contains("request body:\n{\"a\":1}"))
 	}

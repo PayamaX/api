@@ -26,7 +26,14 @@ class GlobalExceptionHandlerTest {
 
 	@Test
 	fun `invalid value is a bad request`() {
-		mockMvc.perform(get("/invalid"))
+		// Arrange
+		val request = get("/invalid")
+
+		// Act
+		val response = mockMvc.perform(request)
+
+		// Assert
+		response
 			.andExpect(status().isBadRequest)
 			.andExpect(jsonPath("$.status").value(400))
 			.andExpect(jsonPath("$.title").value("Bad Request"))
@@ -35,14 +42,28 @@ class GlobalExceptionHandlerTest {
 
 	@Test
 	fun `invalid value keeps the exception message`() {
-		mockMvc.perform(get("/invalid-message"))
+		// Arrange
+		val request = get("/invalid-message")
+
+		// Act
+		val response = mockMvc.perform(request)
+
+		// Assert
+		response
 			.andExpect(status().isBadRequest)
 			.andExpect(jsonPath("$.detail").value("Origin is already registered."))
 	}
 
 	@Test
 	fun `every super exception becomes a problem detail`() {
-		mockMvc.perform(get("/conflict"))
+		// Arrange
+		val request = get("/conflict")
+
+		// Act
+		val response = mockMvc.perform(request)
+
+		// Assert
+		response
 			.andExpect(status().isConflict)
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
 			.andExpect(jsonPath("$.title").value("Conflict"))
@@ -53,21 +74,42 @@ class GlobalExceptionHandlerTest {
 
 	@Test
 	fun `authentication failure is unauthorized`() {
-		mockMvc.perform(get("/unauthenticated"))
+		// Arrange
+		val request = get("/unauthenticated")
+
+		// Act
+		val response = mockMvc.perform(request)
+
+		// Assert
+		response
 			.andExpect(status().isUnauthorized)
 			.andExpect(jsonPath("$.detail").value("Authentication required"))
 	}
 
 	@Test
 	fun `access denied is forbidden`() {
-		mockMvc.perform(get("/denied"))
+		// Arrange
+		val request = get("/denied")
+
+		// Act
+		val response = mockMvc.perform(request)
+
+		// Assert
+		response
 			.andExpect(status().isForbidden)
 			.andExpect(jsonPath("$.detail").value("Access denied"))
 	}
 
 	@Test
 	fun `unexpected failures hide the cause`() {
-		mockMvc.perform(get("/boom"))
+		// Arrange
+		val request = get("/boom")
+
+		// Act
+		val response = mockMvc.perform(request)
+
+		// Assert
+		response
 			.andExpect(status().isInternalServerError)
 			.andExpect(jsonPath("$.status").value(500))
 			.andExpect(jsonPath("$.detail").value("Unexpected error"))
@@ -76,11 +118,16 @@ class GlobalExceptionHandlerTest {
 
 	@Test
 	fun `malformed json stays a bad request`() {
-		mockMvc.perform(
-			post("/echo")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{"),
-		)
+		// Arrange
+		val request = post("/echo")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{")
+
+		// Act
+		val response = mockMvc.perform(request)
+
+		// Assert
+		response
 			.andExpect(status().isBadRequest)
 			.andExpect(jsonPath("$.status").value(400))
 	}

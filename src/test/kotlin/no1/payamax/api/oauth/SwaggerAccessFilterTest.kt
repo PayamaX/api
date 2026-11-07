@@ -23,91 +23,178 @@ class SwaggerAccessFilterTest {
 
 	@Test
 	fun `allows documentation from an address inside a configured range`() {
-		assertContinues(filter, request("/swagger-ui/index.html", "172.18.0.4"))
-		assertContinues(filter, request("/v3/api-docs", "10.8.1.9"))
-		assertContinues(filter, request("/v3/api-docs/public", "127.0.0.1"))
-		assertContinues(filter, request("/swagger-ui.html", "0:0:0:0:0:0:0:1"))
+		// Arrange
+		val requests = listOf(
+			request("/swagger-ui/index.html", "172.18.0.4"),
+			request("/v3/api-docs", "10.8.1.9"),
+			request("/v3/api-docs/public", "127.0.0.1"),
+			request("/swagger-ui.html", "0:0:0:0:0:0:0:1"),
+		)
+
+		requests.forEach { current ->
+			// Act
+			val continued = passes(filter, current)
+
+			// Assert
+			assertTrue(continued)
+		}
 	}
 
 	@Test
 	fun `allows an IPv4 address carried as an IPv4-mapped IPv6 address`() {
-		assertContinues(filter, request("/v3/api-docs.yaml", "::ffff:10.8.0.4"))
+		// Arrange
+		val current = request("/v3/api-docs.yaml", "::ffff:10.8.0.4")
+
+		// Act
+		val continued = passes(filter, current)
+
+		// Assert
+		assertTrue(continued)
 	}
 
 	@Test
 	fun `allows documentation from anywhere when the caller has ROLE_ADMIN`() {
+		// Arrange
 		authenticate("ROLE_ADMIN")
+		val requests = listOf(
+			request("/swagger-ui/swagger-initializer.js", "8.8.8.8"),
+			request("/v3/api-docs/protected", "203.0.113.10"),
+		)
 
-		assertContinues(filter, request("/swagger-ui/swagger-initializer.js", "8.8.8.8"))
-		assertContinues(filter, request("/v3/api-docs/protected", "203.0.113.10"))
+		requests.forEach { current ->
+			// Act
+			val continued = passes(filter, current)
+
+			// Assert
+			assertTrue(continued)
+		}
 	}
 
 	@Test
 	fun `rejects documentation from outside the ranges without ROLE_ADMIN`() {
-		assertRejected(filter, request("/swagger-ui/index.html", "8.8.8.8"))
-		assertRejected(filter, request("/v3/api-docs.yaml", "11.0.0.1"))
-		assertRejected(filter, request("/v3/api-docs.yaml/public", "172.32.0.1"))
-		assertRejected(filter, request("/swagger-ui/oauth2-redirect.html", "192.168.1.20"))
+		// Arrange
+		val requests = listOf(
+			request("/swagger-ui/index.html", "8.8.8.8"),
+			request("/v3/api-docs.yaml", "11.0.0.1"),
+			request("/v3/api-docs.yaml/public", "172.32.0.1"),
+			request("/swagger-ui/oauth2-redirect.html", "192.168.1.20"),
+		)
+
+		requests.forEach { current ->
+			// Act
+			val outcome = blocks(filter, current)
+
+			// Assert
+			assertFalse(outcome.continued)
+			assertTrue(outcome.error is AccessDeniedException)
+		}
 	}
 
 	@Test
 	fun `rejects a caller that has some other role`() {
+		// Arrange
 		authenticate("ROLE_USER")
+		val current = request("/v3/api-docs", "8.8.8.8")
 
-		assertRejected(filter, request("/v3/api-docs", "8.8.8.8"))
+		// Act
+		val outcome = blocks(filter, current)
+
+		// Assert
+		assertFalse(outcome.continued)
+		assertTrue(outcome.error is AccessDeniedException)
 	}
 
 	@Test
 	fun `leaves every other request alone`() {
-		assertContinues(filter, request("/v1/protected/predefined-origins", "8.8.8.8"))
+		// Arrange
+		val current = request("/v1/protected/predefined-origins", "8.8.8.8")
+
+		// Act
+		val continued = passes(filter, current)
+
+		// Assert
+		assertTrue(continued)
 	}
 
 	@Test
 	fun `uses the path inside the context path`() {
-		assertRejected(filter, request("/swagger-ui/index.html", "8.8.8.8", contextPath = "/payamax"))
-		assertContinues(filter, request("/v1/protected/predefined-origins", "8.8.8.8", contextPath = "/payamax"))
+		// Arrange
+		val documentation = request("/swagger-ui/index.html", "8.8.8.8", contextPath = "/payamax")
+		val api = request("/v1/protected/predefined-origins", "8.8.8.8", contextPath = "/payamax")
+
+		// Act
+		val documentationOutcome = blocks(filter, documentation)
+		val apiContinued = passes(filter, api)
+
+		// Assert
+		assertFalse(documentationOutcome.continued)
+		assertTrue(documentationOutcome.error is AccessDeniedException)
+		assertTrue(apiContinued)
 	}
 
 	@Test
 	fun `with no ranges only ROLE_ADMIN may open the docs`() {
+		// Arrange
 		val closed = accessFilter()
+		val anonymous = request("/v3/api-docs", "127.0.0.1")
 
-		assertRejected(closed, request("/v3/api-docs", "127.0.0.1"))
+		// Act
+		val denied = blocks(closed, anonymous)
+
+		// Assert
+		assertFalse(denied.continued)
+		assertTrue(denied.error is AccessDeniedException)
+
+		// Arrange
 		authenticate("ROLE_ADMIN")
-		assertContinues(closed, request("/v3/api-docs", "8.8.8.8"))
+		val admin = request("/v3/api-docs", "8.8.8.8")
+
+		// Act
+		val continued = passes(closed, admin)
+
+		// Assert
+		assertTrue(continued)
 	}
 
 	@Test
 	fun `ignores blank ranges`() {
+		// Arrange
 		val properties = SwaggerAccessProperties().apply {
 			allowedIpRanges = listOf(" 127.0.0.1 ", "", "  ")
 		}
 
-		assertEquals(listOf("127.0.0.1"), properties.allowedRanges())
+		// Act
+		val ranges = properties.allowedRanges()
+
+		// Assert
+		assertEquals(listOf("127.0.0.1"), ranges)
 		properties.validate()
 	}
 
 	@Test
 	fun `rejects a range that is not an IP address`() {
+		// Arrange
 		val properties = SwaggerAccessProperties().apply { allowedIpRanges = listOf("localhost") }
 
+		// Act
 		val error = assertThrows(IllegalArgumentException::class.java) { properties.validate() }
 
+		// Assert
 		assertTrue(error.message!!.contains("localhost"))
 	}
 
-	private fun assertContinues(filter: SwaggerAccessFilter, request: MockHttpServletRequest) {
+	private fun passes(filter: SwaggerAccessFilter, request: MockHttpServletRequest): Boolean {
 		var continued = false
 		filter.doFilter(request, MockHttpServletResponse()) { _, _ -> continued = true }
-		assertTrue(continued)
+		return continued
 	}
 
-	private fun assertRejected(filter: SwaggerAccessFilter, request: MockHttpServletRequest) {
+	private fun blocks(filter: SwaggerAccessFilter, request: MockHttpServletRequest): Blocked {
 		var continued = false
-		assertThrows(AccessDeniedException::class.java) {
+		val error = assertThrows(AccessDeniedException::class.java) {
 			filter.doFilter(request, MockHttpServletResponse()) { _, _ -> continued = true }
 		}
-		assertFalse(continued)
+		return Blocked(continued, error)
 	}
 
 	private fun request(path: String, address: String, contextPath: String = ""): MockHttpServletRequest {
@@ -131,4 +218,6 @@ class SwaggerAccessFilterTest {
 			SwaggerAccessProperties().apply { allowedIpRanges = ranges.toList() },
 		)
 	}
+
+	private data class Blocked(val continued: Boolean, val error: AccessDeniedException)
 }

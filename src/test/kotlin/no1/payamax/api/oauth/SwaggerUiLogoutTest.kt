@@ -9,9 +9,14 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver
 class SwaggerUiLogoutTest {
 	@Test
 	fun `adds an identity provider logout link to the authorize dialog`() {
+		// Arrange
 		val logoutUrl = "https://auth.payamax.app/realms/pax/protocol/openid-connect/logout?client_id=SwaggerUI"
-		val script = injectIdpLogoutPlugin(initializerTemplate(), logoutUrl)
+		val template = initializerTemplate()
 
+		// Act
+		val script = injectIdpLogoutPlugin(template, logoutUrl)
+
+		// Assert
 		assertTrue(script.contains("SwaggerUIBundle.plugins.DownloadUrl,\n      idpLogoutPlugin"))
 		assertTrue(script.contains("function idpLogoutPlugin()"))
 		assertTrue(script.contains("wrapComponents:"))
@@ -25,21 +30,30 @@ class SwaggerUiLogoutTest {
 
 	@Test
 	fun `escapes the logout url inside the generated script`() {
-		val script = injectIdpLogoutPlugin(
-			initializerTemplate(),
-			"https://auth.example/logout?client_id=a\"b<c>",
-		)
+		// Arrange
+		val template = initializerTemplate()
+		val logoutUrl = "https://auth.example/logout?client_id=a\"b<c>"
 
-		assertTrue(
-			script.contains("var logoutUrl = \"https://auth.example/logout?client_id=a\\\"b\\u003cc\\u003e\";"),
-		)
+		// Act
+		val script = injectIdpLogoutPlugin(template, logoutUrl)
+
+		// Assert
+		assertTrue(script.contains("var logoutUrl = \"https://auth.example/logout?client_id=a\\\"b\\u003cc\\u003e\";"))
 	}
 
 	@Test
 	fun `rejects an initializer that swagger ui no longer generates`() {
-		assertThrows<IllegalArgumentException> {
-			injectIdpLogoutPlugin("window.ui = SwaggerUIBundle({});", "https://auth.example/logout")
+		// Arrange
+		val template = "window.ui = SwaggerUIBundle({});"
+		val logoutUrl = "https://auth.example/logout"
+
+		// Act
+		val error = assertThrows<IllegalArgumentException> {
+			injectIdpLogoutPlugin(template, logoutUrl)
 		}
+
+		// Assert
+		assertTrue(error.message!!.contains("Swagger UI initializer is missing the plugins list."))
 	}
 
 	private fun initializerTemplate(): String {

@@ -45,6 +45,8 @@ class OAuth2SecurityConfig(
 	@Bean
 	fun securityFilterChain(http: HttpSecurity, jwtDecoder: JwtDecoder): SecurityFilterChain {
 		http
+			// CorsFilter answers browser preflight before authentication.
+			.cors { }
 			.csrf { it.disable() }
 			.sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
 			.authorizeHttpRequests { requests ->

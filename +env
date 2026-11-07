@@ -20,6 +20,7 @@ PAX_OS_EG_URL=["https://oseg:9200"]
 PAX_AUTH_REALM_URL=https://auth.payamax.app/realms/pax
 PAX_FILES_PUB_URL=https://pax-sw-s3:8333
 PAX_API_URL=https://api:8080
+PAX_ADMIN_URL=https://admin:8080
 PAX_TAG=init
 PAX_IMAGES_SUFFIX=dev
 PAX_JDK_VER=25-jdk
