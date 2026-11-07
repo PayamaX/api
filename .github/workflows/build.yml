@@ -46,6 +46,8 @@ jobs:
         run: bash ./gradlew dependencies
 
       - name: Check
+        env:
+          PAX_TC_PULL_POLICY: always
         run: bash ./gradlew check
 
       - name: Build

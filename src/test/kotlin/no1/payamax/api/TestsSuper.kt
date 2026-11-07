@@ -9,6 +9,7 @@ import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.ImagePullPolicy
+import org.testcontainers.images.PullPolicy
 import org.testcontainers.lifecycle.Startables
 import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
@@ -21,9 +22,14 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.function.Consumer
 
-private object LocalImages : ImagePullPolicy {
+private object NeverPull : ImagePullPolicy {
 	override fun shouldPull(imageName: DockerImageName): Boolean = false
 }
+
+private class ImagePull(
+	val policy: ImagePullPolicy,
+	val description: String,
+)
 
 private class BindHostPort(
 	private val hostPort: Int,
@@ -39,6 +45,10 @@ private class BindHostPort(
  * Postgres and Keycloak from the services images (`ghcr.io/payamax/pgxdb-go` and
  * `ghcr.io/payamax/kcxkc-go`). The tag is `PAX_TAG` when that is set, otherwise the
  * current git branch, otherwise `main` — the same fallback as `tag.ps1`.
+ *
+ * `PAX_TC_PULL_POLICY` selects the image pull policy: `always`, `never`, or `default`.
+ * An unset or blank variable is the same as `default`, which is the Testcontainers
+ * policy and pulls an image when it is missing locally.
  *
  * Started once for the test run and kept until the JVM exits, so every test
  * class shares the same database and Keycloak.
@@ -56,6 +66,7 @@ abstract class TestsSuper {
 		private const val PASSWORD = "password"
 
 		private val tag = imageTag()
+		private val imagePull = resolveImagePull()
 		private val network: Network = Network.newNetwork()
 		private val keycloakPort = freePort()
 		private val http: HttpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()
@@ -63,7 +74,7 @@ abstract class TestsSuper {
 		private val postgres: PostgreSQLContainer = PostgreSQLContainer(
 			DockerImageName.parse("ghcr.io/payamax/pgxdb-go:$tag").asCompatibleSubstituteFor("postgres"),
 		)
-			.withImagePullPolicy(LocalImages)
+			.withImagePullPolicy(imagePull.policy)
 			.withDatabaseName("pg")
 			.withUsername("pg")
 			.withPassword("password")
@@ -77,7 +88,7 @@ abstract class TestsSuper {
 		private val keycloak: GenericContainer<*> = GenericContainer(
 			DockerImageName.parse("ghcr.io/payamax/kcxkc-go:$tag"),
 		)
-			.withImagePullPolicy(LocalImages)
+			.withImagePullPolicy(imagePull.policy)
 			.withNetwork(network)
 			.withEnv("KC_HOSTNAME", "localhost")
 			.withEnv("KC_HOSTNAME_PORT", keycloakPort.toString())
@@ -166,7 +177,7 @@ abstract class TestsSuper {
 				appendLine("Failed to start the Postgres and Keycloak containers used by tests.")
 				appendLine("Postgres image: $postgresImage (${localImage(postgresImage)})")
 				appendLine("Keycloak image: $keycloakImage (${localImage(keycloakImage)})")
-				appendLine("Pull policy: local images only. Testcontainers does not pull, so a missing image fails while creating the container.")
+				appendLine("Pull policy: ${imagePull.description}")
 				append(causeChain(failure))
 			}
 		}
@@ -190,6 +201,27 @@ abstract class TestsSuper {
 				current = current.cause
 			}
 			return lines.joinToString(separator = "\n")
+		}
+
+		private fun resolveImagePull(): ImagePull {
+			val configured = System.getenv("PAX_TC_PULL_POLICY")?.trim().orEmpty()
+			return when (configured.lowercase()) {
+				"", "default" -> ImagePull(
+					PullPolicy.defaultPolicy(),
+					"default. Testcontainers pulls an image when it is missing locally.",
+				)
+				"always" -> ImagePull(
+					PullPolicy.alwaysPull(),
+					"always. Testcontainers pulls an image even when a local copy exists.",
+				)
+				"never" -> ImagePull(
+					NeverPull,
+					"never. Testcontainers does not pull, so a missing image fails while creating the container.",
+				)
+				else -> throw IllegalArgumentException(
+					"PAX_TC_PULL_POLICY must be always, never, or default (got \"$configured\").",
+				)
+			}
 		}
 
 		private fun imageTag(): String {
