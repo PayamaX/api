@@ -32,7 +32,7 @@ class PredefinedOriginsProtectedV1PostTest : PredefinedOriginsProtectedV1TestBas
 			.andExpect(jsonPath("$.rank").value(0.5))
 			.andExpect(jsonPath("$.position").value(4))
 			.andExpect(jsonPath("$.ownerGlobalId").value(nullValue()))
-			.andExpect(jsonPath("$.id").isNumber())
+			.andExpect(jsonPath("$.localId").isNumber())
 		runBlocking { assertEquals(1L, countOrigins()) }
 	}
 
@@ -65,7 +65,7 @@ class PredefinedOriginsProtectedV1PostTest : PredefinedOriginsProtectedV1TestBas
 			.andExpect(jsonPath("$.rank").value(0.25))
 			.andExpect(jsonPath("$.position").value(6))
 			.andExpect(jsonPath("$.ownerGlobalId").value(owner.toString()))
-			.andExpect(jsonPath("$.id").isNumber())
+			.andExpect(jsonPath("$.localId").isNumber())
 		runBlocking {
 			assertEquals(1L, countOrigins())
 			assertEquals(globalId, storedGlobalId(origin))
@@ -102,7 +102,7 @@ class PredefinedOriginsProtectedV1PostTest : PredefinedOriginsProtectedV1TestBas
 			.andExpect(jsonPath("$.rank").value(0.75))
 			.andExpect(jsonPath("$.position").value(7))
 			.andExpect(jsonPath("$.ownerGlobalId").value(owner.toString()))
-			.andExpect(jsonPath("$.id").isNumber())
+			.andExpect(jsonPath("$.localId").isNumber())
 		runBlocking {
 			assertEquals(1L, countOrigins())
 			assertEquals(globalId, storedGlobalId(origin))

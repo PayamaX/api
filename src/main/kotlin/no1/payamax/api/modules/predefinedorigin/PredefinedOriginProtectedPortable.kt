@@ -3,7 +3,7 @@ package no1.payamax.api.modules.predefinedorigin
 import java.util.*
 
 data class PredefinedOriginProtectedPortable(
-	val id: Long,
+	val localId: Long,
 	val globalId: UUID,
 	val origin: String,
 	val rank: Double,

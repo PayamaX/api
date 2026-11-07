@@ -115,26 +115,13 @@ class OAuth2SecurityConfig(
 		converter.setJwtGrantedAuthoritiesConverter { jwt ->
 			val authorities = mutableListOf<GrantedAuthority>()
 			authorities += scopes.convert(jwt)
-			keycloakRoles(jwt).forEach { role ->
+			keycloakRoles(jwt.claims, oauth2.clientId, oauth2.acceptedAudiences()).forEach { role ->
 				val authority = if (role.startsWith("ROLE_")) role else "ROLE_$role"
 				authorities += SimpleGrantedAuthority(authority)
 			}
 			authorities
 		}
 		return converter
-	}
-
-	private fun keycloakRoles(jwt: Jwt): Set<String> {
-		val roles = linkedSetOf<String>()
-		roles += rolesOf(jwt.claims["realm_access"])
-		val resourceAccess = jwt.claims["resource_access"] as? Map<*, *>
-		roles += rolesOf(resourceAccess?.get(oauth2.clientId))
-		return roles
-	}
-
-	private fun rolesOf(access: Any?): List<String> {
-		val roles = (access as? Map<*, *>)?.get("roles") as? Collection<*> ?: return emptyList()
-		return roles.mapNotNull { it?.toString()?.takeIf(String::isNotBlank) }
 	}
 
 	private fun jwkSetUri(): String {
@@ -156,6 +143,23 @@ class OAuth2SecurityConfig(
 		}
 		return jwkSetUri
 	}
+}
+
+internal fun keycloakRoles(claims: Map<String, Any>, clientId: String, audiences: Set<String>): Set<String> {
+	val roles = linkedSetOf<String>()
+	roles += rolesOf(claims["realm_access"])
+	val resourceAccess = claims["resource_access"] as? Map<*, *>
+	// azp is the client the user logged in with. Its roles apply when that client
+	// is allowed to call this API. oauth2.client-id remains the Swagger UI client.
+	val loginClient = claims["azp"]?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+	val roleClient = if (loginClient != null && loginClient in audiences) loginClient else clientId
+	roles += rolesOf(resourceAccess?.get(roleClient))
+	return roles
+}
+
+private fun rolesOf(access: Any?): List<String> {
+	val roles = (access as? Map<*, *>)?.get("roles") as? Collection<*> ?: return emptyList()
+	return roles.mapNotNull { it?.toString()?.takeIf(String::isNotBlank) }
 }
 
 private class LazyJwtDecoder(

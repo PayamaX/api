@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import org.springframework.stereotype.Repository
-import java.util.UUID
+import java.util.*
 
 @Repository
 interface PredefinedOriginRepository : CoroutineCrudRepository<PredefinedOriginEntity, Long> {
@@ -15,4 +15,5 @@ interface PredefinedOriginRepository : CoroutineCrudRepository<PredefinedOriginE
 	suspend fun countByOwnerGlobalId(ownerId: UUID): Long
 	suspend fun findOneByOrigin(origin: String): PredefinedOriginEntity?
 	suspend fun findOneByGlobalId(globalId: UUID): PredefinedOriginEntity?
+	suspend fun findAllByGlobalIdIn(globalIds: Array<UUID>): List<PredefinedOriginEntity>
 }
