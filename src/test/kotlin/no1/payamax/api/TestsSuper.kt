@@ -39,7 +39,7 @@ private class BindHostPort(
 
 /**
  * Postgres and Keycloak from the services images (`ghcr.io/payamax/pgxdb-go` and
- * `ghcr.io/payamax/kc-go`). The tag is `PAX_TAG` when that is set, otherwise the
+ * `ghcr.io/payamax/kcxkc-go`). The tag is `PAX_TAG` when that is set, otherwise the
  * current git branch, otherwise `main` — the same fallback as `tag.ps1`.
  */
 @Testcontainers
@@ -79,7 +79,7 @@ abstract class TestsSuper {
 		@Container
 		@JvmField
 		val keycloak: GenericContainer<*> = GenericContainer(
-			DockerImageName.parse("ghcr.io/payamax/kc-go:$tag"),
+			DockerImageName.parse("ghcr.io/payamax/kcxkc-go:$tag"),
 		)
 			.withImagePullPolicy(LocalImages)
 			.withNetwork(network)
