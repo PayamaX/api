@@ -39,7 +39,8 @@ private class BindHostPort(
 
 /**
  * Postgres and Keycloak from the services images (`ghcr.io/payamax/pgxdb-go` and
- * `ghcr.io/payamax/kc-go`). Tag defaults to `main`, the services `PAX_TAG`.
+ * `ghcr.io/payamax/kc-go`). The tag is `PAX_TAG` when that is set, otherwise the
+ * current git branch, otherwise `main` — the same fallback as `tag.ps1`.
  */
 @Testcontainers
 abstract class TestsSuper {
@@ -54,7 +55,7 @@ abstract class TestsSuper {
 		private const val USERNAME = "user@pax.ir"
 		private const val PASSWORD = "password"
 
-		private val tag = System.getenv("PAX_TAG")?.takeIf { it.isNotBlank() } ?: "main"
+		private val tag = imageTag()
 		private val network: Network = Network.newNetwork()
 		private val keycloakPort = freePort()
 		private val http: HttpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()
@@ -157,5 +158,18 @@ abstract class TestsSuper {
 		private fun encode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8)
 
 		private fun freePort(): Int = java.net.ServerSocket(0).use { it.localPort }
+
+		private fun imageTag(): String {
+			System.getenv("PAX_TAG")?.takeIf { it.isNotBlank() }?.let { return it }
+			return gitBranch().ifBlank { "main" }
+		}
+
+		private fun gitBranch(): String = runCatching {
+			val process = ProcessBuilder("git", "branch", "--show-current")
+				.redirectError(ProcessBuilder.Redirect.DISCARD)
+				.start()
+			val branch = process.inputStream.bufferedReader().use { it.readText() }.trim()
+			if (process.waitFor() == 0) branch else ""
+		}.getOrDefault("")
 	}
 }
