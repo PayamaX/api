@@ -14,5 +14,5 @@ class PredefinedOriginsPublicV1Controller(private val publicProvider: Predefined
 {
 	@PermitAll
 	@GetMapping
-	suspend fun origins(pageable: Pageable): Page<PredefinedOriginPublicPortable> = publicProvider.paged(pageable)
+	suspend fun get(pageable: Pageable): Page<PredefinedOriginPublicPortable> = publicProvider.paged(pageable)
 }

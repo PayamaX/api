@@ -53,7 +53,7 @@ class OAuth2SecurityConfig(
 					// SwaggerAccessFilter is the gate. These stay unauthenticated so a
 					// client inside an allowed range can open the docs without a token.
 					.requestMatchers(*swaggerDocumentationPatterns.toTypedArray()).permitAll()
-					.anyRequest().authenticated()
+					.anyRequest().permitAll()
 			}
 			.oauth2ResourceServer { resourceServer ->
 				resourceServer.jwt { jwt ->
