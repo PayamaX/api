@@ -29,7 +29,7 @@ alter table if exists predefined_origin
 	add constraint uq__predefined_origin__global_id unique (global_id);
 
 alter table if exists predefined_origin
-	add constraint ix__predefined_origin__owner_global_id (owner_global_id);
+	add constraint ix__predefined_origin__owner_global_id unique (owner_global_id);
 
 alter table if exists predefined_origin
-	add constraint ix__predefined_origin__position ("position");
+	add constraint ix__predefined_origin__position unique ("position");
