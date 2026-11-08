@@ -12,7 +12,7 @@ on:
       - reopened
     paths:
       - src/main/resources/db/migration/**
-      - ../scripts/db.sh
+      - ../scripts/db-check.sh
       - .github/workflows/db-check.yml
 
 permissions:
@@ -57,6 +57,6 @@ jobs:
 
       - name: Check migrations can be synced
         run: |
-          bash "${GITHUB_WORKSPACE}/api/.github/scripts/check-migrations.sh" \
+          bash "${GITHUB_WORKSPACE}/api/.github/scripts/db-check.sh" \
             "${GITHUB_WORKSPACE}/api/${MIGRATIONS_SOURCE}" \
             "${GITHUB_WORKSPACE}/services/${MIGRATIONS_TARGET}"
