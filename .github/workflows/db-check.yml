@@ -1,0 +1,62 @@
+# On a pull request, verify migrations can be copied into PayamaX/services.
+# Does not commit or push. Sync still runs from db-sync.yml after the merge to main.
+# Checkout is the pull request merge commit: the tree that would land on main.
+# Secret SERVICES_REPO_TOKEN: fine-grained PAT with contents read on PayamaX/services.
+name: Check migrations
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths:
+      - src/main/resources/db/migration/**
+      - ../scripts/db.sh
+      - .github/workflows/db-check.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  SERVICES_REPOSITORY: PayamaX/services
+  SERVICES_BRANCH: main
+  MIGRATIONS_SOURCE: src/main/resources/db/migration
+  MIGRATIONS_TARGET: Postgres/Engine/migrations
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check services token
+        env:
+          SERVICES_REPO_TOKEN: ${{ secrets.SERVICES_REPO_TOKEN }}
+        run: |
+          if [ -z "${SERVICES_REPO_TOKEN}" ]; then
+            echo "::error::Repository secret SERVICES_REPO_TOKEN is missing. Create a fine-grained PAT with contents read on ${SERVICES_REPOSITORY} and store it as SERVICES_REPO_TOKEN."
+            exit 1
+          fi
+
+      - name: Checkout api
+        uses: actions/checkout@v7
+        with:
+          path: api
+
+      - name: Checkout services
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.SERVICES_REPOSITORY }}
+          ref: ${{ env.SERVICES_BRANCH }}
+          token: ${{ secrets.SERVICES_REPO_TOKEN }}
+          path: services
+          persist-credentials: false
+
+      - name: Check migrations can be synced
+        run: |
+          bash "${GITHUB_WORKSPACE}/api/.github/scripts/check-migrations.sh" \
+            "${GITHUB_WORKSPACE}/api/${MIGRATIONS_SOURCE}" \
+            "${GITHUB_WORKSPACE}/services/${MIGRATIONS_TARGET}"
