@@ -8,7 +8,7 @@ on:
       - main
     paths:
       - src/main/resources/db/migration/**
-      - .github/workflows/db.yml
+      - db-sync.yml
   workflow_dispatch:
 
 permissions:
