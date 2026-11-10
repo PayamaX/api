@@ -9,6 +9,7 @@ data class RankedOriginProtectedPortable(
 	val rank: Double,
 	val ownerGlobalId: UUID?,
 	val position: Int,
+	val comment: String?,
 ) {
 	companion object {
 		fun create(entity: RankedOriginEntity) = RankedOriginProtectedPortable(
@@ -18,6 +19,7 @@ data class RankedOriginProtectedPortable(
 			entity.rank,
 			entity.ownerGlobalId,
 			entity.position,
+			entity.comment,
 		)
 	}
 }

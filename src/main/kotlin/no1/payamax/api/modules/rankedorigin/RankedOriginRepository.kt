@@ -5,11 +5,12 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import org.springframework.stereotype.Repository
 import java.util.*
+import kotlin.time.Instant
 
 @Repository
 interface RankedOriginRepository : CoroutineCrudRepository<RankedOriginEntity, Long> {
 	suspend fun findBy(pageable: Pageable): Flow<RankedOriginEntity>
-	suspend fun findAllByOwnerGlobalIdNull(pageable: Pageable): Flow<RankedOriginEntity>
+	suspend fun findAllByOwnerGlobalIdNullAndUpdatedLessThan(pageable: Pageable, updated: Instant): Flow<RankedOriginEntity>
 	suspend fun findAllByOwnerGlobalId(ownerId: UUID, pageable: Pageable): Flow<RankedOriginEntity>
 	suspend fun countByOwnerGlobalIdNull(): Long
 	suspend fun countByOwnerGlobalId(ownerId: UUID): Long

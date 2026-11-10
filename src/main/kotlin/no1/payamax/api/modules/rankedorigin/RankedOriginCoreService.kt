@@ -20,6 +20,7 @@ class RankedOriginCoreService(private val repository: RankedOriginRepository) : 
 			persisted.rank = input.rank
 			persisted.ownerGlobalId = input.ownerGlobalId
 			persisted.position = input.position
+			persisted.comment = input.comment
 		} else {
 			persisted = RankedOriginEntity(
 				null,
@@ -27,7 +28,8 @@ class RankedOriginCoreService(private val repository: RankedOriginRepository) : 
 				input.origin,
 				input.rank,
 				input.ownerGlobalId,
-				input.position
+				input.position,
+				input.comment,
 			)
 		}
 		return repository.save(persisted)

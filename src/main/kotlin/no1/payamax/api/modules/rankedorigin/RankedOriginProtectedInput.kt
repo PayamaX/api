@@ -8,4 +8,5 @@ data class RankedOriginProtectedInput(
 	val rank: Double,
 	val ownerGlobalId: UUID?,
 	val position: Int,
+	val comment: String?,
 )

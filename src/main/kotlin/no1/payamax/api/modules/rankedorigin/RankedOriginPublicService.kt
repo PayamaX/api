@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import java.util.*
+import kotlin.time.Instant
 
 @Service
 class RankedOriginPublicService(
@@ -13,9 +14,9 @@ class RankedOriginPublicService(
 	private val repository: RankedOriginRepository,
 	private val sorts: Sorts,
 ) : RankedOriginPublicContract {
-	override suspend fun paged(pageable: Pageable): Page<RankedOriginPublicPortable> {
+	override suspend fun paged(pageable: Pageable, lastSynced: Instant): Page<RankedOriginPublicPortable> {
 		sorts.require(pageable, RankedOriginEntity::class.java)
-		return repository.findAllByOwnerGlobalIdNull(pageable)
+		return repository.findAllByOwnerGlobalIdNullAndUpdatedLessThan(pageable, lastSynced)
 			.toPage(pageable, repository.countByOwnerGlobalIdNull())
 			.map { RankedOriginPublicPortable.create(it) }
 	}

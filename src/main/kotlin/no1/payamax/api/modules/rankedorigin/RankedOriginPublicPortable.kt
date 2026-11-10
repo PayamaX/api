@@ -7,8 +7,15 @@ data class RankedOriginPublicPortable(
 	val origin: String,
 	val rank: Double,
 	val position: Int,
+	val comment: String?,
 ) {
 	companion object {
-		fun create(entity: RankedOriginEntity) = RankedOriginPublicPortable(entity.globalId, entity.origin, entity.rank, entity.position)
+		fun create(entity: RankedOriginEntity) = RankedOriginPublicPortable(
+			entity.globalId,
+			entity.origin,
+			entity.rank,
+			entity.position,
+			entity.comment,
+		)
 	}
 }
