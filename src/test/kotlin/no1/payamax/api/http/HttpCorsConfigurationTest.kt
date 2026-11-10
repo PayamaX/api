@@ -358,7 +358,7 @@ class HttpCorsConfigurationTest {
 	}
 
 	private fun crossOrigin(method: String, origin: String, serverPort: Int = 19100): MockHttpServletRequest {
-		val request = MockHttpServletRequest(method, "/v1/protected/predefined-origins")
+		val request = MockHttpServletRequest(method, "/v1/protected/ranked-origins")
 		request.scheme = "http"
 		request.serverName = "localhost"
 		request.serverPort = serverPort

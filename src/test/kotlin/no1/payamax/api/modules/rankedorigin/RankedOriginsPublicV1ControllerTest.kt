@@ -1,4 +1,4 @@
-package no1.payamax.api.modules.predefinedorigin
+package no1.payamax.api.modules.rankedorigin
 
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
@@ -25,7 +25,7 @@ import java.util.UUID
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class PredefinedOriginsPublicV1ControllerTest : TestsSuper() {
+class RankedOriginsPublicV1ControllerTest : TestsSuper() {
 	@field:Autowired
 	private lateinit var mockMvc: MockMvc
 
@@ -35,7 +35,7 @@ class PredefinedOriginsPublicV1ControllerTest : TestsSuper() {
 	@BeforeEach
 	fun clearOrigins() {
 		runBlocking {
-			databaseClient.sql("DELETE FROM predefined_origin").fetch().rowsUpdated().awaitSingle()
+			databaseClient.sql("DELETE FROM ranked_origin").fetch().rowsUpdated().awaitSingle()
 		}
 	}
 
@@ -194,7 +194,7 @@ class PredefinedOriginsPublicV1ControllerTest : TestsSuper() {
 	}
 
 	private fun getPage(token: String? = null, page: Int = 0, size: Int = 20, sort: String? = null): ResultActions {
-		var request = get("/v1/public/predefined-origins")
+		var request = get("/v1/public/ranked-origins")
 			.param("page", page.toString())
 			.param("size", size.toString())
 			.accept(MediaType.APPLICATION_JSON)
@@ -212,7 +212,7 @@ class PredefinedOriginsPublicV1ControllerTest : TestsSuper() {
 	private suspend fun insert(origin: String, position: Int, rank: Double, owner: UUID?) {
 		var spec = databaseClient.sql(
 			"""
-			INSERT INTO predefined_origin (global_id, origin, owner_global_id, position, rank)
+			INSERT INTO ranked_origin (global_id, origin, owner_global_id, position, rank)
 			VALUES (:globalId, :origin, :owner, :position, :rank)
 			""".trimIndent(),
 		)
@@ -225,7 +225,7 @@ class PredefinedOriginsPublicV1ControllerTest : TestsSuper() {
 	}
 
 	private suspend fun storedGlobalId(origin: String): String {
-		return databaseClient.sql("SELECT global_id FROM predefined_origin WHERE origin = :origin")
+		return databaseClient.sql("SELECT global_id FROM ranked_origin WHERE origin = :origin")
 			.bind("origin", origin)
 			.map { row, _ -> row.get("global_id", UUID::class.java)!!.toString() }
 			.one()

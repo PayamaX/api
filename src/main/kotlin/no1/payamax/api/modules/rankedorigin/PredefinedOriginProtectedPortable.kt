@@ -1,8 +1,8 @@
-package no1.payamax.api.modules.predefinedorigin
+package no1.payamax.api.modules.rankedorigin
 
 import java.util.*
 
-data class PredefinedOriginProtectedPortable(
+data class RankedOriginProtectedPortable(
 	val localId: Long,
 	val globalId: UUID,
 	val origin: String,
@@ -11,7 +11,7 @@ data class PredefinedOriginProtectedPortable(
 	val position: Int,
 ) {
 	companion object {
-		fun create(entity: PredefinedOriginEntity) = PredefinedOriginProtectedPortable(
+		fun create(entity: RankedOriginEntity) = RankedOriginProtectedPortable(
 			checkNotNull(entity.id),
 			entity.globalId,
 			entity.origin,

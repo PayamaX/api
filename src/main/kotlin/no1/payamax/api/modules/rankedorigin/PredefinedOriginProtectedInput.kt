@@ -1,8 +1,8 @@
-package no1.payamax.api.modules.predefinedorigin
+package no1.payamax.api.modules.rankedorigin
 
 import java.util.*
 
-data class PredefinedOriginProtectedInput(
+data class RankedOriginProtectedInput(
 	val globalId: UUID?,
 	val origin: String,
 	val rank: Double,

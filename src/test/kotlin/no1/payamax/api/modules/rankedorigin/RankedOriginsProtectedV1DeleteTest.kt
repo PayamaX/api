@@ -1,4 +1,4 @@
-package no1.payamax.api.modules.predefinedorigin
+package no1.payamax.api.modules.rankedorigin
 
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.Matchers.nullValue
@@ -11,7 +11,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.UUID
 import kotlin.test.assertEquals
 
-class PredefinedOriginsProtectedV1DeleteTest : PredefinedOriginsProtectedV1TestBase() {
+class RankedOriginsProtectedV1DeleteTest : RankedOriginsProtectedV1TestBase() {
 	@Test
 	@WithMockUser(roles = ["ADMIN"])
 	fun `delete removes an origin`() {

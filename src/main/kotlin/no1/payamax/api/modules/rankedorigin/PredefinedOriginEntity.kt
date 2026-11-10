@@ -1,4 +1,4 @@
-package no1.payamax.api.modules.predefinedorigin
+package no1.payamax.api.modules.rankedorigin
 
 import jakarta.persistence.Table as JpaTable
 import jakarta.persistence.UniqueConstraint
@@ -8,11 +8,11 @@ import org.springframework.data.relational.core.mapping.Table
 import java.util.UUID
 
 @JpaTable(uniqueConstraints = [
-	UniqueConstraint(name = "uq__predefined_origin__global_id", columnNames = ["global_id"]),
-	UniqueConstraint(name = "uq__predefined_origin__origin", columnNames = ["origin"]),
+	UniqueConstraint(name = "uq__ranked_origin__global_id", columnNames = ["global_id"]),
+	UniqueConstraint(name = "uq__ranked_origin__origin", columnNames = ["origin"]),
 ])
 @Table
-class PredefinedOriginEntity(
+class RankedOriginEntity(
 	@Id
 	override var id: Long? = null,
 	override var globalId: UUID,

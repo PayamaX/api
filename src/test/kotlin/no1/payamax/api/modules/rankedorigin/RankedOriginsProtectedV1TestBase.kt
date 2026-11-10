@@ -1,4 +1,4 @@
-package no1.payamax.api.modules.predefinedorigin
+package no1.payamax.api.modules.rankedorigin
 
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
@@ -24,7 +24,7 @@ import java.util.UUID
 
 @SpringBootTest
 @AutoConfigureMockMvc
-abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
+abstract class RankedOriginsProtectedV1TestBase : TestsSuper() {
 	@field:Autowired
 	protected lateinit var mockMvc: MockMvc
 
@@ -34,7 +34,7 @@ abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
 	@BeforeEach
 	fun clearOrigins() {
 		runBlocking {
-			databaseClient.sql("DELETE FROM predefined_origin").fetch().rowsUpdated().awaitSingle()
+			databaseClient.sql("DELETE FROM ranked_origin").fetch().rowsUpdated().awaitSingle()
 		}
 	}
 
@@ -119,7 +119,7 @@ abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
 	protected suspend fun insert(origin: String, position: Int, rank: Double, owner: UUID?) {
 		var spec = databaseClient.sql(
 			"""
-			INSERT INTO predefined_origin (global_id, origin, owner_global_id, position, rank)
+			INSERT INTO ranked_origin (global_id, origin, owner_global_id, position, rank)
 			VALUES (:globalId, :origin, :owner, :position, :rank)
 			""".trimIndent(),
 		)
@@ -132,7 +132,7 @@ abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
 	}
 
 	protected suspend fun storedGlobalId(origin: String): String {
-		return databaseClient.sql("SELECT global_id FROM predefined_origin WHERE origin = :origin")
+		return databaseClient.sql("SELECT global_id FROM ranked_origin WHERE origin = :origin")
 			.bind("origin", origin)
 			.map { row, _ -> row.get("global_id", UUID::class.java)!!.toString() }
 			.one()
@@ -140,7 +140,7 @@ abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
 	}
 
 	protected suspend fun storedRank(origin: String): Double {
-		return databaseClient.sql("SELECT rank FROM predefined_origin WHERE origin = :origin")
+		return databaseClient.sql("SELECT rank FROM ranked_origin WHERE origin = :origin")
 			.bind("origin", origin)
 			.map { row, _ -> (row.get("rank") as Number).toDouble() }
 			.one()
@@ -149,9 +149,9 @@ abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
 
 	protected suspend fun countOrigins(origin: String? = null): Long {
 		val sql = if (origin == null) {
-			"SELECT COUNT(*) AS count FROM predefined_origin"
+			"SELECT COUNT(*) AS count FROM ranked_origin"
 		} else {
-			"SELECT COUNT(*) AS count FROM predefined_origin WHERE origin = :origin"
+			"SELECT COUNT(*) AS count FROM ranked_origin WHERE origin = :origin"
 		}
 		var spec = databaseClient.sql(sql)
 		if (origin != null) {
@@ -161,6 +161,6 @@ abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
 	}
 
 	protected companion object {
-		const val ORIGINS = "/v1/protected/predefined-origins"
+		const val ORIGINS = "/v1/protected/ranked-origins"
 	}
 }

@@ -1,12 +1,12 @@
-package no1.payamax.api.modules.predefinedorigin
+package no1.payamax.api.modules.rankedorigin
 
 import no1.payamax.api.exceptions.InvalidValueException
 import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
-class PredefinedOriginCoreService(private val repository: PredefinedOriginRepository) : PredefinedOriginCoreContract {
-	override suspend fun persist(input: PredefinedOriginProtectedInput): PredefinedOriginEntity {
+class RankedOriginCoreService(private val repository: RankedOriginRepository) : RankedOriginCoreContract {
+	override suspend fun persist(input: RankedOriginProtectedInput): RankedOriginEntity {
 		if (input.rank !in 0.0..1.0) {
 			throw InvalidValueException("Rank must be between 0 and 1.")
 		}
@@ -21,7 +21,7 @@ class PredefinedOriginCoreService(private val repository: PredefinedOriginReposi
 			persisted.ownerGlobalId = input.ownerGlobalId
 			persisted.position = input.position
 		} else {
-			persisted = PredefinedOriginEntity(
+			persisted = RankedOriginEntity(
 				null,
 				UUID.randomUUID(),
 				input.origin,

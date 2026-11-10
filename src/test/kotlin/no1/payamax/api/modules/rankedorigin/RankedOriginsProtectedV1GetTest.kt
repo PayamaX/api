@@ -1,4 +1,4 @@
-package no1.payamax.api.modules.predefinedorigin
+package no1.payamax.api.modules.rankedorigin
 
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.Matchers.nullValue
@@ -8,7 +8,7 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import java.util.*
 
-class PredefinedOriginsProtectedV1GetTest : PredefinedOriginsProtectedV1TestBase() {
+class RankedOriginsProtectedV1GetTest : RankedOriginsProtectedV1TestBase() {
 	@Test
 	@WithMockUser(roles = ["ADMIN"])
 	fun `get by global id returns that origin`() {
@@ -47,7 +47,7 @@ class PredefinedOriginsProtectedV1GetTest : PredefinedOriginsProtectedV1TestBase
 		// Assert
 		response
 			.andExpect(status().isBadRequest)
-			.andExpect(content().string("""{"detail":"Entity not found","instance":"/v1/protected/predefined-origins/$missing","status":400,"title":"Bad Request"}"""))
+			.andExpect(content().string("""{"detail":"Entity not found","instance":"/v1/protected/ranked-origins/$missing","status":400,"title":"Bad Request"}"""))
 	}
 
 	@Test
