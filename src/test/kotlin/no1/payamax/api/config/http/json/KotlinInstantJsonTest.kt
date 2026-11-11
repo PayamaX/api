@@ -23,7 +23,7 @@ class KotlinInstantJsonTest {
 	).build()
 
 	@Test
-	fun `an instant is a millis and nanos string`() {
+	fun `an instant is a seconds and nanos string`() {
 		val instant = Instant.ofEpochSecond(2, 234_567_890)
 
 		val json = mapper.writeValueAsString(instant)
