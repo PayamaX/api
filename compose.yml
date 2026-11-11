@@ -139,7 +139,7 @@ services:
                 condition: service_healthy
 
     kc:
-        image: ghcr.io/payamax/kc-go:${PAX_TAG}
+        image: ghcr.io/payamax/kcxkc-go:${PAX_TAG}
 #        pull_policy:  always
         container_name: pax__api__kc_eg
         restart: always

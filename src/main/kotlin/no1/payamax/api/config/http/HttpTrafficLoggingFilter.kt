@@ -108,6 +108,7 @@ class HttpTrafficLoggingFilter : OncePerRequestFilter(), Ordered {
 	): String {
 		val elapsedMs = (System.nanoTime() - startedNanos) / 1_000_000
 		return buildString {
+			append("\r\n")
 			append("HTTP exchange ")
 			append(request.method)
 			append(' ')

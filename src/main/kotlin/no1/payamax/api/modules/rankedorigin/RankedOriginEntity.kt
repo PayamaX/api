@@ -18,7 +18,7 @@ class RankedOriginEntity(
 	override var id: Long? = null,
 	override var globalId: UUID,
 	var updated: Instant,
-	var deleted: Instant,
+	var deleted: Instant?,
 	var origin: String,
 	var rank: Double,
 	var ownerGlobalId: UUID?,
