@@ -233,8 +233,8 @@ abstract class TestsSuper {
 			val branch = gitBranch()
 			if (branch == "main") return "main"
 
-			System.getenv("PAX_TAG")?.trim()?.takeIf { it.isNotBlank() }?.let { return it }
 			dotEnvTag()?.let { return it }
+			System.getenv("PAX_TAG")?.trim()?.takeIf { it.isNotBlank() }?.let { return it }
 			return branch.takeIf { it.isNotBlank() }
 				?: throw IllegalStateException("PAX_TAG is not set and the current git branch could not be determined.")
 		}
