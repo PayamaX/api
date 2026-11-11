@@ -17,7 +17,7 @@ import java.time.Instant
 
 class RankedOriginsChangesQueryTest {
 	@Test
-	fun `query instants use the millis nanos form`() {
+	fun `query instants use the seconds nanos form`() {
 		val provider = RecordingPublicContract()
 		val conversion = DefaultFormattingConversionService()
 		conversion.addConverter(KotlinInstantConverter())
@@ -28,8 +28,8 @@ class RankedOriginsChangesQueryTest {
 
 		mockMvc.perform(
 			get("/v1/public/ranked-origins/changes")
-				.param("lastSynced", "2234.567890")
-				.param("cursorInstant", "2234.567890")
+				.param("lastSynced", "2.234567890")
+				.param("cursorInstant", "2.234567890")
 				.param("cursorIdentifier", "0"),
 		).andExpect(status().isOk)
 

@@ -28,7 +28,7 @@ class KotlinInstantJsonTest {
 
 		val json = mapper.writeValueAsString(instant)
 
-		assertEquals("\"2234.567890\"", json)
+		assertEquals("\"2.234567890\"", json)
 		assertEquals(instant, mapper.readValue(json, Instant::class.java))
 	}
 
@@ -38,7 +38,7 @@ class KotlinInstantJsonTest {
 
 		val json = mapper.writeValueAsString(instant)
 
-		assertEquals("\"-1.500000\"", json)
+		assertEquals("\"-1.998500000\"", json)
 		assertEquals(instant, mapper.readValue(json, Instant::class.java))
 	}
 
@@ -48,7 +48,7 @@ class KotlinInstantJsonTest {
 
 		val json = mapper.writeValueAsString(Sample(instant))
 
-		assertEquals("""{"at":"1000.000001"}""", json)
+		assertEquals("""{"at":"1.000000001"}""", json)
 	}
 
 	@Test
@@ -60,7 +60,6 @@ class KotlinInstantJsonTest {
 		val schema = converters.resolveAsResolvedSchema(AnnotatedType(Instant::class.java)).schema
 
 		assertTrue("string" in (schema.types ?: setOf(schema.type)))
-		assertEquals("2234.567890", schema.example)
 		assertNull(schema.properties)
 	}
 

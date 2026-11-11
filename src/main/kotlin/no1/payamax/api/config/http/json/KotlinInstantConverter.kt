@@ -8,5 +8,5 @@ import java.time.Instant
 class KotlinInstantConverter : Converter<String, Instant> {
 	override fun convert(source: String): Instant =
 		KotlinInstantJson.parse(source)
-			?: throw IllegalArgumentException("Instant must use the millis.nanos form, such as 2234.567890")
+			?: throw IllegalArgumentException("Instant must use the seconds.nanos form, such as 2234.567890")
 }

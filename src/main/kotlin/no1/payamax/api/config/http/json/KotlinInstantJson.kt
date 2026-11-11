@@ -31,15 +31,15 @@ class KotlinInstantJson {
 	class Deserializer : ValueDeserializer<Instant>() {
 		override fun deserialize(parser: JsonParser, ctxt: DeserializationContext): Instant {
 			if (parser.currentToken() != JsonToken.VALUE_STRING) {
-				return ctxt.reportInputMismatch(Instant::class.java, "Instant must be a millis.nanos string")
+				return ctxt.reportInputMismatch(Instant::class.java, "Instant must be a seconds.nanos string")
 			}
-			return parse(parser.getText())
-				?: ctxt.reportInputMismatch(Instant::class.java, "Instant must use the millis.nanos form, such as 2234.567890")
+			return parse(parser.valueAsString)
+				?: ctxt.reportInputMismatch(Instant::class.java, "Instant must use the seconds.nanos form, such as 2234.567890")
 		}
 	}
 
 	internal companion object {
-		private val TEXT = Regex("""(-?)(0|[1-9]\d*)\.(\d{0,9})""")
+		private val TEXT = Regex("""(-|\\+)?(0|[1-9]\d*)\.(\d{0,9})""")
 
 		fun registerOpenApi() {
 			SpringDocUtils.getConfig()
@@ -49,57 +49,25 @@ class KotlinInstantJson {
 
 		fun openApiSchema(): StringSchema = StringSchema().apply {
 			pattern = "^${TEXT.pattern}$"
-			example = "2234.567890"
-			description = "Epoch milliseconds, a dot, then six digits of the remaining nanoseconds."
+			example = format(Instant.now())
+			description = "Epoch seconds, a dot, then the remaining nanoseconds."
 		}
 
 		fun format(instant: Instant): String {
-			val nanos = instant.nano.toLong()
-			if (instant.epochSecond >= 0) {
-				return text(instant.epochSecond, nanos)
-			}
-			val seconds = if (nanos == 0L) -instant.epochSecond else -instant.epochSecond - 1
-			val remainder = if (nanos == 0L) 0L else 1_000_000_000 - nanos
-			return "-${text(seconds, remainder)}"
+			return "${instant.epochSecond}.${"%09d".format(instant.nano)}"
 		}
 
 		fun parse(text: String): Instant? {
 			val match = TEXT.matchEntire(text) ?: return null
-			val negative = match.groupValues[1].isNotEmpty()
-			val (seconds, nanos) = parts(match.groupValues[2], match.groupValues[3].toInt())
-			return try {
-				when {
-					!negative -> Instant.ofEpochSecond(seconds, nanos.toLong())
-					nanos == 0 -> Instant.ofEpochSecond(-seconds, 0)
-					else -> Instant.ofEpochSecond(-(seconds + 1), (1_000_000_000 - nanos).toLong())
-				}
-			} catch (_: IllegalArgumentException) {
-				null
-			}
+			val parts = text.split('.')
+			if(parts.size != 2) return null
+			val seconds =parts[0].toLongOrNull() ?: return null
+			val nanos = parts[1].toLongOrNull() ?: return null
+			return Instant.ofEpochSecond(seconds, nanos)
 		}
 
-		private fun text(seconds: Long, nanosecondsOfSecond: Long): String {
-			val millisInSecond = nanosecondsOfSecond / 1_000_000
-			val fraction = nanosecondsOfSecond % 1_000_000
-			val millis = if (seconds == 0L) {
-				millisInSecond.toString()
-			} else {
-				seconds.toString() + "%03d".format(millisInSecond)
-			}
-			return "$millis.${"%06d".format(fraction)}"
-		}
-
-		private fun parts(millis: String, fraction: Int): Pair<Long, Int> {
-			val seconds: Long
-			val millisInSecond: Int
-			if (millis.length <= 3) {
-				seconds = 0
-				millisInSecond = millis.toInt()
-			} else {
-				seconds = millis.dropLast(3).toLong()
-				millisInSecond = millis.takeLast(3).toInt()
-			}
-			return seconds to millisInSecond * 1_000_000 + fraction
+		private fun parts(seconds: String, nanos: Int): Pair<Long, Int> {
+			return Pair(seconds.toLong(), nanos)
 		}
 	}
 }
