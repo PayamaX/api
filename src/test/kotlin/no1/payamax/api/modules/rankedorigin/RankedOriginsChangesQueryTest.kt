@@ -72,11 +72,5 @@ class RankedOriginsChangesQueryTest {
 			this.cursor = cursor
 			return emptyList()
 		}
-
-		override suspend fun paged(pageable: Pageable, lastSynced: Instant): Page<RankedOriginPublicPortable> =
-			Page.empty()
-
-		override suspend fun paged(pageable: Pageable, ownerId: UUID): Page<RankedOriginPublicPortable> =
-			Page.empty()
 	}
 }
