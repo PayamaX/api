@@ -1,6 +1,7 @@
 package no1.payamax.api.modules.rankedorigin
 
-import kotlin.time.Instant
+import java.time.Instant
+
 
 interface RankedOriginCoreContract {
 	suspend fun persist(input: RankedOriginProtectedInput): RankedOriginEntity

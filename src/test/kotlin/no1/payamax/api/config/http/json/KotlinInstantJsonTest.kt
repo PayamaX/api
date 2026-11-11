@@ -13,7 +13,7 @@ import org.springdoc.core.providers.ObjectMapperProvider
 import tools.jackson.databind.DatabindException
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.module.SimpleModule
-import kotlin.time.Instant
+import java.time.Instant
 
 class KotlinInstantJsonTest {
 	private val mapper = JsonMapper.builder().addModule(
@@ -24,7 +24,7 @@ class KotlinInstantJsonTest {
 
 	@Test
 	fun `an instant is a millis and nanos string`() {
-		val instant = Instant.fromEpochSeconds(2, 234_567_890)
+		val instant = Instant.ofEpochSecond(2, 234_567_890)
 
 		val json = mapper.writeValueAsString(instant)
 
@@ -34,7 +34,7 @@ class KotlinInstantJsonTest {
 
 	@Test
 	fun `a negative instant keeps nanoseconds`() {
-		val instant = Instant.fromEpochSeconds(-1, 998_500_000)
+		val instant = Instant.ofEpochSecond(-1, 998_500_000)
 
 		val json = mapper.writeValueAsString(instant)
 
@@ -44,7 +44,7 @@ class KotlinInstantJsonTest {
 
 	@Test
 	fun `a field is one value`() {
-		val instant = Instant.fromEpochSeconds(1, 1)
+		val instant = Instant.ofEpochSecond(1, 1)
 
 		val json = mapper.writeValueAsString(Sample(instant))
 

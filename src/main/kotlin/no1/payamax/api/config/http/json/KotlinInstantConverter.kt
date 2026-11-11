@@ -2,7 +2,7 @@ package no1.payamax.api.config.http.json
 
 import org.springframework.core.convert.converter.Converter
 import org.springframework.stereotype.Component
-import kotlin.time.Instant
+import java.time.Instant
 
 @Component
 class KotlinInstantConverter : Converter<String, Instant> {

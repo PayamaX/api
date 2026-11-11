@@ -9,9 +9,8 @@ import org.springframework.data.r2dbc.core.select
 import org.springframework.data.relational.core.query.Criteria
 import org.springframework.data.relational.core.query.Query
 import org.springframework.stereotype.Service
+import java.time.Instant
 import java.util.*
-import kotlin.time.Clock
-import kotlin.time.Instant
 
 @Service
 class RankedOriginCoreService(
@@ -22,7 +21,7 @@ class RankedOriginCoreService(
 		if (input.rank !in 0.0..1.0) {
 			throw InvalidValueException("Rank must be between 0 and 1.")
 		}
-		val now = Clock.System.now()
+		val now = Instant.now()
 		var persisted = repository.findOneByOrigin(input.origin)
 		if (persisted != null) {
 			if (input.globalId != null && persisted.globalId != input.globalId) {

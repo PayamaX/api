@@ -7,8 +7,7 @@ import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
 import org.springframework.data.r2dbc.dialect.PostgresDialect
 import java.time.LocalDateTime
 import java.time.ZoneOffset
-import kotlin.time.Instant
-import kotlin.time.toJavaInstant
+import java.time.Instant
 
 class KotlinInstantR2dbcConversionTest {
 	@Test
@@ -16,11 +15,11 @@ class KotlinInstantR2dbcConversionTest {
 		val conversions = R2dbcCustomConversions.of(PostgresDialect.INSTANCE, kotlinInstantConverters)
 		val service = GenericConversionService()
 		conversions.registerConvertersIn(service)
-		val instant = Instant.fromEpochSeconds(2, 234_567_890)
+		val instant = Instant.ofEpochSecond(2, 234_567_890)
 
 		val stored = service.convert(instant, LocalDateTime::class.java)
 
-		assertEquals(LocalDateTime.ofInstant(instant.toJavaInstant(), ZoneOffset.UTC), stored)
+		assertEquals(LocalDateTime.ofInstant(instant, ZoneOffset.UTC), stored)
 		assertEquals(instant, service.convert(stored, Instant::class.java))
 	}
 }

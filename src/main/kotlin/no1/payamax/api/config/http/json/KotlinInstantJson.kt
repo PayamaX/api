@@ -10,7 +10,7 @@ import tools.jackson.databind.DeserializationContext
 import tools.jackson.databind.SerializationContext
 import tools.jackson.databind.ValueDeserializer
 import tools.jackson.databind.ValueSerializer
-import kotlin.time.Instant
+import java.time.Instant
 
 /**
  * JSON form of [Instant]: epoch milliseconds, a dot, then the remaining nanoseconds
@@ -39,7 +39,7 @@ class KotlinInstantJson {
 	}
 
 	internal companion object {
-		private val TEXT = Regex("""(-?)(0|[1-9]\d*)\.(\d{6})""")
+		private val TEXT = Regex("""(-?)(0|[1-9]\d*)\.(\d{0,9})""")
 
 		fun registerOpenApi() {
 			SpringDocUtils.getConfig()
@@ -54,12 +54,12 @@ class KotlinInstantJson {
 		}
 
 		fun format(instant: Instant): String {
-			if (instant.epochSeconds >= 0) {
-				return text(instant.epochSeconds, instant.nanosecondsOfSecond)
+			val nanos = instant.nano.toLong()
+			if (instant.epochSecond >= 0) {
+				return text(instant.epochSecond, nanos)
 			}
-			val nanos = instant.nanosecondsOfSecond
-			val seconds = if (nanos == 0) -instant.epochSeconds else -instant.epochSeconds - 1
-			val remainder = if (nanos == 0) 0 else 1_000_000_000 - nanos
+			val seconds = if (nanos == 0L) -instant.epochSecond else -instant.epochSecond - 1
+			val remainder = if (nanos == 0L) 0L else 1_000_000_000 - nanos
 			return "-${text(seconds, remainder)}"
 		}
 
@@ -69,16 +69,16 @@ class KotlinInstantJson {
 			val (seconds, nanos) = parts(match.groupValues[2], match.groupValues[3].toInt())
 			return try {
 				when {
-					!negative -> Instant.fromEpochSeconds(seconds, nanos.toLong())
-					nanos == 0 -> Instant.fromEpochSeconds(-seconds, 0)
-					else -> Instant.fromEpochSeconds(-(seconds + 1), (1_000_000_000 - nanos).toLong())
+					!negative -> Instant.ofEpochSecond(seconds, nanos.toLong())
+					nanos == 0 -> Instant.ofEpochSecond(-seconds, 0)
+					else -> Instant.ofEpochSecond(-(seconds + 1), (1_000_000_000 - nanos).toLong())
 				}
 			} catch (_: IllegalArgumentException) {
 				null
 			}
 		}
 
-		private fun text(seconds: Long, nanosecondsOfSecond: Int): String {
+		private fun text(seconds: Long, nanosecondsOfSecond: Long): String {
 			val millisInSecond = nanosecondsOfSecond / 1_000_000
 			val fraction = nanosecondsOfSecond % 1_000_000
 			val millis = if (seconds == 0L) {

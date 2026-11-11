@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.LocalDateTime
 import java.util.UUID
 
 @SpringBootTest
@@ -119,14 +120,15 @@ abstract class RankedOriginsProtectedV1TestBase : TestsSuper() {
 	protected suspend fun insert(origin: String, position: Int, rank: Double, owner: UUID?) {
 		var spec = databaseClient.sql(
 			"""
-			INSERT INTO ranked_origin (global_id, origin, owner_global_id, position, rank)
-			VALUES (:globalId, :origin, :owner, :position, :rank)
+			INSERT INTO ranked_origin (global_id, origin, owner_global_id, position, rank, updated)
+			VALUES (:globalId, :origin, :owner, :position, :rank, :updated)
 			""".trimIndent(),
 		)
 			.bind("globalId", UUID.randomUUID())
 			.bind("origin", origin)
 			.bind("position", position)
 			.bind("rank", rank)
+			.bind("updated", LocalDateTime.of(2020, 1, 1, 0, 0))
 		spec = if (owner == null) spec.bindNull("owner", UUID::class.java) else spec.bind("owner", owner)
 		spec.fetch().rowsUpdated().awaitSingle()
 	}
@@ -143,6 +145,14 @@ abstract class RankedOriginsProtectedV1TestBase : TestsSuper() {
 		return databaseClient.sql("SELECT rank FROM ranked_origin WHERE origin = :origin")
 			.bind("origin", origin)
 			.map { row, _ -> (row.get("rank") as Number).toDouble() }
+			.one()
+			.awaitSingle()
+	}
+
+	protected suspend fun isDeleted(origin: String): Boolean {
+		return databaseClient.sql("SELECT deleted FROM ranked_origin WHERE origin = :origin")
+			.bind("origin", origin)
+			.map { row, _ -> row.get("deleted") != null }
 			.one()
 			.awaitSingle()
 	}

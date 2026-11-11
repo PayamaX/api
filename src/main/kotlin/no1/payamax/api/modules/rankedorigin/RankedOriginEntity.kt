@@ -5,8 +5,8 @@ import jakarta.persistence.UniqueConstraint
 import no1.payamax.api.config.http.r2dbc.Sequenced
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
+import java.time.Instant
 import java.util.UUID
-import kotlin.time.Instant
 
 @JpaTable(uniqueConstraints = [
 	UniqueConstraint(name = "uq__ranked_origin__global_id", columnNames = ["global_id"]),

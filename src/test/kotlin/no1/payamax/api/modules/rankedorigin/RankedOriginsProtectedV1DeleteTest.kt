@@ -36,8 +36,10 @@ class RankedOriginsProtectedV1DeleteTest : RankedOriginsProtectedV1TestBase() {
 			.andExpect(jsonPath("$.ownerGlobalId").value(nullValue()))
 			.andExpect(jsonPath("$.localId").isNumber())
 		runBlocking {
-			assertEquals(0L, countOrigins("PayamaX"))
+			assertEquals(1L, countOrigins("PayamaX"))
+			assertEquals(true, isDeleted("PayamaX"))
 			assertEquals(1L, countOrigins("09121234567"))
+			assertEquals(false, isDeleted("09121234567"))
 		}
 	}
 
@@ -61,9 +63,10 @@ class RankedOriginsProtectedV1DeleteTest : RankedOriginsProtectedV1TestBase() {
 			.andExpect(status().isOk)
 			.andExpect(content().string(""))
 		runBlocking {
-			assertEquals(0L, countOrigins("PayamaX"))
-			assertEquals(0L, countOrigins("09121234567"))
+			assertEquals(true, isDeleted("PayamaX"))
+			assertEquals(true, isDeleted("09121234567"))
 			assertEquals(1L, countOrigins("Alerts"))
+			assertEquals(false, isDeleted("Alerts"))
 		}
 	}
 

@@ -6,8 +6,8 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.stereotype.Service
+import java.time.Instant
 import java.util.*
-import kotlin.time.Instant
 
 @Service
 class RankedOriginPublicService(

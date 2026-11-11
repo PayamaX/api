@@ -15,9 +15,7 @@ import org.springframework.r2dbc.core.DatabaseClient
 import reactor.core.publisher.Mono
 import java.time.LocalDateTime
 import java.time.ZoneOffset
-import kotlin.time.Instant
-import kotlin.time.toJavaInstant
-import kotlin.time.toKotlinInstant
+import java.time.Instant
 
 @Configuration
 class DatabaseConfiguration {
@@ -46,10 +44,10 @@ internal val kotlinInstantConverters: List<Converter<*, *>> = listOf(
 
 private class KotlinInstantToLocalDateTime : Converter<Instant, LocalDateTime> {
 	override fun convert(source: Instant): LocalDateTime =
-		LocalDateTime.ofInstant(source.toJavaInstant(), ZoneOffset.UTC)
+		LocalDateTime.ofInstant(source, ZoneOffset.UTC)
 }
 
 private class LocalDateTimeToKotlinInstant : Converter<LocalDateTime, Instant> {
 	override fun convert(source: LocalDateTime): Instant =
-		source.toInstant(ZoneOffset.UTC).toKotlinInstant()
+		source.toInstant(ZoneOffset.UTC)
 }

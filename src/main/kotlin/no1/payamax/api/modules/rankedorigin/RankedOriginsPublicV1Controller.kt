@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import kotlin.time.Instant
+import java.time.Instant
 
 @RequestMapping("/v1/public/ranked-origins")
 @RestController
@@ -19,6 +19,7 @@ class RankedOriginsPublicV1Controller(private val publicProvider: RankedOriginPu
 	@GetMapping("/changes")
 	suspend fun get(
 		@RequestParam lastSynced: Instant,
-		@ParameterObject cursor: RankedOriginCursor?,
-	): List<RankedOriginPublicPortable> = publicProvider.changes(lastSynced, cursor)
+		@RequestParam cursorInstant: Instant? = null,
+		@RequestParam cursorIdentifier: Long? = null,
+	): List<RankedOriginPublicPortable> = publicProvider.changes(lastSynced, RankedOriginCursor.create(cursorInstant, cursorIdentifier))
 }

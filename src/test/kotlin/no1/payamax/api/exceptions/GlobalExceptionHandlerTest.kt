@@ -3,10 +3,15 @@ package no1.payamax.api.exceptions
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.Test
+import org.springframework.core.MethodParameter
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.AuthenticationException
+import org.springframework.validation.BeanPropertyBindingResult
+import org.springframework.validation.FieldError
+import org.springframework.validation.ObjectError
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
@@ -117,6 +122,26 @@ class GlobalExceptionHandlerTest {
 	}
 
 	@Test
+	fun `invalid request content lists each rejected value`() {
+		// Arrange
+		val request = get("/invalid-content")
+
+		// Act
+		val response = mockMvc.perform(request)
+
+		// Assert
+		response
+			.andExpect(status().isBadRequest)
+			.andExpect(jsonPath("$.detail").value("Invalid request content."))
+			.andExpect(jsonPath("$.errors[0].field").value("origin"))
+			.andExpect(jsonPath("$.errors[0].message").value("must not be blank"))
+			.andExpect(jsonPath("$.errors[1].field").value("rank"))
+			.andExpect(jsonPath("$.errors[1].message").value("must be greater than 0"))
+			.andExpect(jsonPath("$.errors[2].field").value("input"))
+			.andExpect(jsonPath("$.errors[2].message").value("origin and rank conflict"))
+	}
+
+	@Test
 	fun `malformed json stays a bad request`() {
 		// Arrange
 		val request = post("/echo")
@@ -153,8 +178,20 @@ private class ExceptionHandlerFixtureController {
 	@GetMapping("/boom")
 	fun boom(): Unit = throw IllegalStateException("secret database password")
 
+	@GetMapping("/invalid-content")
+	fun invalidContent(): Unit = throw invalidRequestContent()
+
 	@PostMapping("/echo")
 	fun echo(@RequestBody body: Map<String, String>): Map<String, String> = body
 }
 
 private class ConflictException(message: String) : SuperException(HttpStatus.CONFLICT, message)
+
+private fun invalidRequestContent(): MethodArgumentNotValidException {
+	val binding = BeanPropertyBindingResult(mapOf("origin" to ""), "input")
+	binding.addError(FieldError("input", "origin", "must not be blank"))
+	binding.addError(FieldError("input", "rank", "must be greater than 0"))
+	binding.addError(ObjectError("input", "origin and rank conflict"))
+	val method = ExceptionHandlerFixtureController::class.java.getDeclaredMethod("echo", Map::class.java)
+	return MethodArgumentNotValidException(MethodParameter(method, 0), binding)
+}

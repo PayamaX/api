@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import org.springframework.stereotype.Repository
 import java.util.*
-import kotlin.time.Instant
+import java.time.Instant
 
 @Repository
 interface RankedOriginRepository : CoroutineCrudRepository<RankedOriginEntity, Long> {
