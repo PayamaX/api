@@ -1,6 +1,7 @@
 package no1.payamax.api.modules.rankedorigin
 
 import jakarta.annotation.security.PermitAll
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,6 +19,6 @@ class RankedOriginsPublicV1Controller(private val publicProvider: RankedOriginPu
 	@GetMapping("/changes")
 	suspend fun get(
 		@RequestParam lastSynced: Instant,
-		cursor: RankedOriginCursor?,
+		@ParameterObject cursor: RankedOriginCursor?,
 	): List<RankedOriginPublicPortable> = publicProvider.changes(lastSynced, cursor)
 }
