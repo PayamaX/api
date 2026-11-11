@@ -1,4 +1,4 @@
-package no1.payamax.api.modules.predefinedorigin
+package no1.payamax.api.modules.rankedorigin
 
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
@@ -20,11 +20,12 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.LocalDateTime
 import java.util.UUID
 
 @SpringBootTest
 @AutoConfigureMockMvc
-abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
+abstract class RankedOriginsProtectedV1TestBase : TestsSuper() {
 	@field:Autowired
 	protected lateinit var mockMvc: MockMvc
 
@@ -34,7 +35,7 @@ abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
 	@BeforeEach
 	fun clearOrigins() {
 		runBlocking {
-			databaseClient.sql("DELETE FROM predefined_origin").fetch().rowsUpdated().awaitSingle()
+			databaseClient.sql("DELETE FROM ranked_origin").fetch().rowsUpdated().awaitSingle()
 		}
 	}
 
@@ -119,20 +120,21 @@ abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
 	protected suspend fun insert(origin: String, position: Int, rank: Double, owner: UUID?) {
 		var spec = databaseClient.sql(
 			"""
-			INSERT INTO predefined_origin (global_id, origin, owner_global_id, position, rank)
-			VALUES (:globalId, :origin, :owner, :position, :rank)
+			INSERT INTO ranked_origin (global_id, origin, owner_global_id, position, rank, updated)
+			VALUES (:globalId, :origin, :owner, :position, :rank, :updated)
 			""".trimIndent(),
 		)
 			.bind("globalId", UUID.randomUUID())
 			.bind("origin", origin)
 			.bind("position", position)
 			.bind("rank", rank)
+			.bind("updated", LocalDateTime.of(2020, 1, 1, 0, 0))
 		spec = if (owner == null) spec.bindNull("owner", UUID::class.java) else spec.bind("owner", owner)
 		spec.fetch().rowsUpdated().awaitSingle()
 	}
 
 	protected suspend fun storedGlobalId(origin: String): String {
-		return databaseClient.sql("SELECT global_id FROM predefined_origin WHERE origin = :origin")
+		return databaseClient.sql("SELECT global_id FROM ranked_origin WHERE origin = :origin")
 			.bind("origin", origin)
 			.map { row, _ -> row.get("global_id", UUID::class.java)!!.toString() }
 			.one()
@@ -140,18 +142,26 @@ abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
 	}
 
 	protected suspend fun storedRank(origin: String): Double {
-		return databaseClient.sql("SELECT rank FROM predefined_origin WHERE origin = :origin")
+		return databaseClient.sql("SELECT rank FROM ranked_origin WHERE origin = :origin")
 			.bind("origin", origin)
 			.map { row, _ -> (row.get("rank") as Number).toDouble() }
 			.one()
 			.awaitSingle()
 	}
 
+	protected suspend fun isDeleted(origin: String): Boolean {
+		return databaseClient.sql("SELECT deleted FROM ranked_origin WHERE origin = :origin")
+			.bind("origin", origin)
+			.map { row, _ -> row.get("deleted") != null }
+			.one()
+			.awaitSingle()
+	}
+
 	protected suspend fun countOrigins(origin: String? = null): Long {
 		val sql = if (origin == null) {
-			"SELECT COUNT(*) AS count FROM predefined_origin"
+			"SELECT COUNT(*) AS count FROM ranked_origin"
 		} else {
-			"SELECT COUNT(*) AS count FROM predefined_origin WHERE origin = :origin"
+			"SELECT COUNT(*) AS count FROM ranked_origin WHERE origin = :origin"
 		}
 		var spec = databaseClient.sql(sql)
 		if (origin != null) {
@@ -161,6 +171,6 @@ abstract class PredefinedOriginsProtectedV1TestBase : TestsSuper() {
 	}
 
 	protected companion object {
-		const val ORIGINS = "/v1/protected/predefined-origins"
+		const val ORIGINS = "/v1/protected/ranked-origins"
 	}
 }

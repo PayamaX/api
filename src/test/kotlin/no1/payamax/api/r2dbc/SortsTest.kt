@@ -2,7 +2,7 @@ package no1.payamax.api.r2dbc
 
 import no1.payamax.api.config.http.r2dbc.Sorts
 import no1.payamax.api.exceptions.InvalidValueException
-import no1.payamax.api.modules.predefinedorigin.PredefinedOriginEntity
+import no1.payamax.api.modules.rankedorigin.RankedOriginEntity
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -22,7 +22,7 @@ class SortsTest {
 
 		// Act
 		val ex = assertThrows(InvalidValueException::class.java) {
-			sorts.require(pageable, PredefinedOriginEntity::class.java)
+			sorts.require(pageable, RankedOriginEntity::class.java)
 		}
 
 		// Assert
@@ -37,7 +37,7 @@ class SortsTest {
 
 		// Act
 		val ex = assertThrows(InvalidValueException::class.java) {
-			sorts.require(pageable, PredefinedOriginEntity::class.java)
+			sorts.require(pageable, RankedOriginEntity::class.java)
 		}
 
 		// Assert
@@ -51,7 +51,7 @@ class SortsTest {
 
 		// Act
 		val ex = assertThrows(InvalidValueException::class.java) {
-			sorts.require(pageable, PredefinedOriginEntity::class.java)
+			sorts.require(pageable, RankedOriginEntity::class.java)
 		}
 
 		// Assert
@@ -68,7 +68,7 @@ class SortsTest {
 		)
 
 		// Act
-		val failure = runCatching { sorts.require(pageable, PredefinedOriginEntity::class.java) }.exceptionOrNull()
+		val failure = runCatching { sorts.require(pageable, RankedOriginEntity::class.java) }.exceptionOrNull()
 
 		// Assert
 		assertNull(failure)
@@ -80,7 +80,7 @@ class SortsTest {
 		val pageable = PageRequest.of(0, 1)
 
 		// Act
-		val failure = runCatching { sorts.require(pageable, PredefinedOriginEntity::class.java) }.exceptionOrNull()
+		val failure = runCatching { sorts.require(pageable, RankedOriginEntity::class.java) }.exceptionOrNull()
 
 		// Assert
 		assertNull(failure)

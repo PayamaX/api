@@ -114,7 +114,7 @@ class SwaggerAccessFilterTest {
 	@Test
 	fun `leaves every other request alone`() {
 		// Arrange
-		val current = request("/v1/protected/predefined-origins", "8.8.8.8")
+		val current = request("/v1/protected/ranked-origins", "8.8.8.8")
 
 		// Act
 		val continued = passes(filter, current)
@@ -127,7 +127,7 @@ class SwaggerAccessFilterTest {
 	fun `uses the path inside the context path`() {
 		// Arrange
 		val documentation = request("/swagger-ui/index.html", "8.8.8.8", contextPath = "/payamax")
-		val api = request("/v1/protected/predefined-origins", "8.8.8.8", contextPath = "/payamax")
+		val api = request("/v1/protected/ranked-origins", "8.8.8.8", contextPath = "/payamax")
 
 		// Act
 		val documentationOutcome = blocks(filter, documentation)

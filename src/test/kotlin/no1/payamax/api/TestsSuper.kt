@@ -19,6 +19,8 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Duration
 import java.util.function.Consumer
 
@@ -43,8 +45,9 @@ private class BindHostPort(
 
 /**
  * Postgres and Keycloak from the services images (`ghcr.io/payamax/pgxdb-go` and
- * `ghcr.io/payamax/kcxkc-go`). The tag is `PAX_TAG` when that is set, otherwise the
- * current git branch, otherwise `main` — the same fallback as `tag.ps1`.
+ * `ghcr.io/payamax/kcxkc-go`). On the `main` branch the tag is always `main`.
+ * Otherwise it is `PAX_TAG` from the environment, then from the nearest `.env`
+ * in the current directory or its ancestors, and finally the current git branch.
  *
  * `PAX_TC_PULL_POLICY` selects the image pull policy: `always`, `never`, or `default`.
  * An unset or blank variable is the same as `default`, which is the Testcontainers
@@ -64,6 +67,7 @@ abstract class TestsSuper {
 		private const val UNTRUSTED_CLIENT = "admin-cli"
 		private const val USERNAME = "user@pax.ir"
 		private const val PASSWORD = "password"
+		private val DOTENV_PAX_TAG = Regex("""(?:export\s+)?PAX_TAG\s*=\s*(.*)""")
 
 		private val tag = imageTag()
 		private val imagePull = resolveImagePull()
@@ -90,6 +94,7 @@ abstract class TestsSuper {
 		)
 			.withImagePullPolicy(imagePull.policy)
 			.withNetwork(network)
+			.withImagePullPolicy(PullPolicy.defaultPolicy())
 			.withEnv("KC_HOSTNAME", "localhost")
 			.withEnv("KC_HOSTNAME_PORT", keycloakPort.toString())
 			.withEnv("KC_HOSTNAME_STRICT", "false")
@@ -225,9 +230,32 @@ abstract class TestsSuper {
 		}
 
 		private fun imageTag(): String {
-			System.getenv("PAX_TAG")?.takeIf { it.isNotBlank() }?.let { return it }
-			return gitBranch().ifBlank { "main" }
+			val branch = gitBranch()
+			if (branch == "main") return "main"
+
+			dotEnvTag()?.let { return it }
+			System.getenv("PAX_TAG")?.trim()?.takeIf { it.isNotBlank() }?.let { return it }
+			return branch.takeIf { it.isNotBlank() }
+				?: throw IllegalStateException("PAX_TAG is not set and the current git branch could not be determined.")
 		}
+
+		private fun dotEnvTag(): String? = generateSequence(Path.of("").toAbsolutePath().normalize()) { it.parent }
+			.map { it.resolve(".env") }.firstNotNullOfOrNull(::dotEnvTagFrom)
+
+		private fun dotEnvTagFrom(path: Path): String? = runCatching {
+			if (!Files.isRegularFile(path)) return@runCatching null
+
+			Files.newBufferedReader(path).useLines { lines ->
+				lines.firstNotNullOfOrNull { line ->
+					val match = DOTENV_PAX_TAG.matchEntire(line.trim()) ?: return@firstNotNullOfOrNull null
+					match.groupValues[1]
+						.trim()
+						.removeSurrounding("\"")
+						.removeSurrounding("'")
+						.takeIf { it.isNotBlank() }
+				}
+			}
+		}.getOrNull()
 
 		private fun gitBranch(): String = runCatching {
 			val process = ProcessBuilder("git", "branch", "--show-current")

@@ -1,3 +1,4 @@
+PAX_TAG=origin
 PAX_PG_PG_USR=pg
 PAX_PG_PG_PWD=password
 PAX_PG_PG_DB=pg
@@ -21,7 +22,6 @@ PAX_AUTH_REALM_URL=https://auth.payamax.app/realms/pax
 PAX_FILES_PUB_URL=https://pax-sw-s3:8333
 PAX_API_URL=https://api:8080
 PAX_ADMIN_URL=https://admin:8080
-PAX_TAG=init
 PAX_IMAGES_SUFFIX=dev
 PAX_JDK_VER=25-jdk
 PAX_JRE_VER=25-jre

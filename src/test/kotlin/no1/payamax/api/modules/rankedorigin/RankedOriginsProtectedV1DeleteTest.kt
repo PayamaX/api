@@ -1,4 +1,4 @@
-package no1.payamax.api.modules.predefinedorigin
+package no1.payamax.api.modules.rankedorigin
 
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.Matchers.nullValue
@@ -11,7 +11,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.UUID
 import kotlin.test.assertEquals
 
-class PredefinedOriginsProtectedV1DeleteTest : PredefinedOriginsProtectedV1TestBase() {
+class RankedOriginsProtectedV1DeleteTest : RankedOriginsProtectedV1TestBase() {
 	@Test
 	@WithMockUser(roles = ["ADMIN"])
 	fun `delete removes an origin`() {
@@ -36,8 +36,10 @@ class PredefinedOriginsProtectedV1DeleteTest : PredefinedOriginsProtectedV1TestB
 			.andExpect(jsonPath("$.ownerGlobalId").value(nullValue()))
 			.andExpect(jsonPath("$.localId").isNumber())
 		runBlocking {
-			assertEquals(0L, countOrigins("PayamaX"))
+			assertEquals(1L, countOrigins("PayamaX"))
+			assertEquals(true, isDeleted("PayamaX"))
 			assertEquals(1L, countOrigins("09121234567"))
+			assertEquals(false, isDeleted("09121234567"))
 		}
 	}
 
@@ -61,9 +63,10 @@ class PredefinedOriginsProtectedV1DeleteTest : PredefinedOriginsProtectedV1TestB
 			.andExpect(status().isOk)
 			.andExpect(content().string(""))
 		runBlocking {
-			assertEquals(0L, countOrigins("PayamaX"))
-			assertEquals(0L, countOrigins("09121234567"))
+			assertEquals(true, isDeleted("PayamaX"))
+			assertEquals(true, isDeleted("09121234567"))
 			assertEquals(1L, countOrigins("Alerts"))
+			assertEquals(false, isDeleted("Alerts"))
 		}
 	}
 
