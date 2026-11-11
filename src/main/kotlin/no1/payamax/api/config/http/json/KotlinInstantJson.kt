@@ -39,7 +39,7 @@ class KotlinInstantJson {
 	}
 
 	internal companion object {
-		private val TEXT = Regex("""(-|\\+)?(0|[1-9]\d*)\.(\d{0,9})""")
+		private val TEXT = Regex("""(-|\\+)?(0|[1-9]\d*)\.(\d{9})""")
 
 		fun registerOpenApi() {
 			SpringDocUtils.getConfig()

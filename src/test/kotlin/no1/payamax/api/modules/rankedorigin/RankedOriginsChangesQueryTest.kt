@@ -50,8 +50,8 @@ class RankedOriginsChangesQueryTest {
 
 		val actions = mockMvc.perform(
 			get("/v1/public/ranked-origins/changes")
-				.param("lastSynced", "2234.567890")
-				.param("cursorInstant", "2234.567890"),
+				.param("lastSynced", "2.234567890")
+				.param("cursorInstant", "2.234567890"),
 		)
 		val result = actions.andReturn()
 		val response = if (result.request.isAsyncStarted) mockMvc.perform(asyncDispatch(result)) else actions
