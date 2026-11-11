@@ -1,7 +1,8 @@
 alter table public.predefined_origin rename to ranked_origin;
 alter table public.ranked_origin add column comment varchar(400);
-alter table public.ranked_origin add column updated Timestamp;
-alter table public.ranked_origin add column deleted Timestamp;
+alter table public.ranked_origin add column updated timestamp not null;
+alter table public.ranked_origin add column deleted timestamp;
+alter table public.ranked_origin alter column position integer not null;
 
 alter table public.ranked_origin
 	rename constraint uq__predefined_origin__global_id to uq__ranked_origin__global_id;

@@ -7,6 +7,4 @@ import java.time.Instant
 
 interface RankedOriginPublicContract {
 	suspend fun changes(lastSynced: Instant, cursor: RankedOriginCursor?): List<RankedOriginPublicPortable>
-	suspend fun paged(pageable: Pageable, lastSynced: Instant): Page<RankedOriginPublicPortable>
-	suspend fun paged(pageable: Pageable, ownerId: UUID): Page<RankedOriginPublicPortable>
 }

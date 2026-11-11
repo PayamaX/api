@@ -5,8 +5,8 @@ import no1.payamax.api.exceptions.InvalidValueException
 import java.time.Instant
 
 data class RankedOriginCursor(
-	@field:Parameter(required = false) val updated: Instant,
-	@field:Parameter(required = false) val identifier: Long,
+	val updated: Instant,
+	val identifier: Long,
 ) {
 	companion object {
 		fun create(cursorInstant: Instant?, cursorIdentifier: Long?): RankedOriginCursor? {

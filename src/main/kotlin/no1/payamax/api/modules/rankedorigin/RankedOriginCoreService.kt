@@ -17,7 +17,7 @@ class RankedOriginCoreService(
 	private val repository: RankedOriginRepository,
 	private val entityTemplate: R2dbcEntityTemplate
 ) : RankedOriginCoreContract {
-	override suspend fun persist(input: RankedOriginProtectedInput): RankedOriginEntity {
+	override suspend fun persist(input: RankedOriginCoreInput): RankedOriginEntity {
 		if (input.rank !in 0.0..1.0) {
 			throw InvalidValueException("Rank must be between 0 and 1.")
 		}
@@ -56,8 +56,7 @@ class RankedOriginCoreService(
 			Criteria.where("updated").greaterThan(lastSynced)
 		} else {
 			Criteria
-				.where("updated")
-				.greaterThan(cursor.updated)
+				.where("updated").greaterThan(cursor.updated)
 				.or(
 					Criteria
 						.where("updated").`is`(cursor.updated)

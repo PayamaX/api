@@ -4,6 +4,6 @@ import java.time.Instant
 
 
 interface RankedOriginCoreContract {
-	suspend fun persist(input: RankedOriginProtectedInput): RankedOriginEntity
+	suspend fun persist(input: RankedOriginCoreInput): RankedOriginEntity
 	suspend fun changes(lastSynced: Instant, cursor: RankedOriginCursor?): List<RankedOriginEntity>
 }

@@ -26,7 +26,7 @@ class RankedOriginProtectedService(
 	}
 
 	override suspend fun persist(input: RankedOriginProtectedInput): RankedOriginProtectedPortable {
-		return RankedOriginProtectedPortable.create(coreProvider.persist(input))
+		return RankedOriginProtectedPortable.create(coreProvider.persist(RankedOriginCoreInput(input.globalId, input.origin, input.rank, input.ownerGlobalId, input.position, input.comment)))
 	}
 
 	override suspend fun delete(globalId: UUID): RankedOriginProtectedPortable {
