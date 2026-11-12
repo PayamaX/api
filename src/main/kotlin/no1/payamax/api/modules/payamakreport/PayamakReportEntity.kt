@@ -1,4 +1,4 @@
-package no1.payamax.api.modules.payamakreports
+package no1.payamax.api.modules.payamakreport
 
 import jakarta.persistence.Table as JpaTable
 import jakarta.persistence.UniqueConstraint
@@ -16,9 +16,8 @@ class PayamakReportEntity(
 	var origin: String,
 	var body: String?,
 	var hash: String?,
-	var reporter: UUID,
+	var reporterUserGlobalId: UUID?,
 	var reporterComment: String?,
-	var repeatedCount: Int,
-	var desiredDiagnostics: PayamakReportDiagnostics,
-	var decidedDiagnostics: PayamakReportDiagnostics?,
+	var detectedDiagnostics: PayamakReportDiagnostics,
+	var expectedDiagnostics: PayamakReportDiagnostics?,
 ) : Sequenced

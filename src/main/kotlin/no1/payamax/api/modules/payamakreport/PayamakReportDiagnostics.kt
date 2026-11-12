@@ -1,4 +1,4 @@
-package no1.payamax.api.modules.payamakreports
+package no1.payamax.api.modules.payamakreport
 
 enum class PayamakReportDiagnostics {
 	Important,

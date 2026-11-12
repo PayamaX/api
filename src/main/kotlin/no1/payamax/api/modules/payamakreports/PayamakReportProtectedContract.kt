@@ -1,3 +1,0 @@
-package no1.payamax.api.modules.payamakreports
-
-interface PayamakReportProtectedContract

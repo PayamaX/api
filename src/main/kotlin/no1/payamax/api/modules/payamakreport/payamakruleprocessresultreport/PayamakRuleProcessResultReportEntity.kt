@@ -1,0 +1,24 @@
+package no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport
+
+import jakarta.persistence.UniqueConstraint
+import no1.payamax.api.config.http.r2dbc.Sequenced
+import no1.payamax.api.modules.payamakreport.PayamakReportEntity
+import org.springframework.data.relational.core.mapping.Table
+import java.util.UUID
+import jakarta.persistence.Table as JpaTable
+
+@JpaTable(uniqueConstraints = [
+	UniqueConstraint(name = "uq__payamak_rule_process_result_report__global_id", columnNames = ["global_id"])
+])
+@Table
+class PayamakRuleProcessResultReportEntity (
+	override var id: Long?,
+	override var globalId: UUID,
+	var payamakReport: PayamakReportEntity,
+	var processorName: String,
+	var processorVersion: String,
+	var generalRank: Float,
+	var userValuesRank: Float,
+	var processorProvidedComment: String,
+	var position: Int,
+): Sequenced
