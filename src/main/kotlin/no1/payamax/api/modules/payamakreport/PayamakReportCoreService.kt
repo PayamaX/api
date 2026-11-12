@@ -18,7 +18,7 @@ class PayamakReportCoreService(
 			val entity = PayamakReportEntity(
 				null,
 				UUID.randomUUID(),
-				PayamakReportStates.REVIEWED,
+				PayamakReportStates.PENDING,
 				item.origin,
 				item.body,
 				item.sha512,
