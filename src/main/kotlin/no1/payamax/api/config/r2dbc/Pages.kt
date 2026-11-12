@@ -1,4 +1,4 @@
-package no1.payamax.api.config.http.r2dbc
+package no1.payamax.api.config.r2dbc
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList

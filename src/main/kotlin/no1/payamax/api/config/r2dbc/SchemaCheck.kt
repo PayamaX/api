@@ -1,6 +1,7 @@
-package no1.payamax.api.config.http.r2dbc
+package no1.payamax.api.config.r2dbc
 
 import jakarta.persistence.Entity
+import org.hibernate.boot.Metadata
 import org.hibernate.boot.MetadataSources
 import org.hibernate.boot.model.naming.Identifier
 import org.hibernate.boot.model.naming.ImplicitForeignKeyNameSource
@@ -19,6 +20,8 @@ import org.springframework.core.env.Environment
 import org.springframework.core.type.filter.AnnotationTypeFilter
 import org.springframework.stereotype.Component
 import java.io.File
+import java.sql.Connection
+import java.sql.DriverManager
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -55,6 +58,7 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 				.applyImplicitNamingStrategy(ReadableForeignKeyNamingStrategy())
 				.applyPhysicalNamingStrategy(EntitySuffixPhysicalNamingStrategy())
 				.build()
+			var mismatch: SchemaManagementException? = null
 			try {
 				SchemaManagementToolCoordinator.process(
 					metadata,
@@ -62,14 +66,112 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 					settings,
 					DelayedDropRegistryNotAvailableImpl.INSTANCE,
 				)
-			} catch (mismatch: SchemaManagementException) {
+			} catch (failure: SchemaManagementException) {
+				mismatch = failure
+			}
+			val unmapped = unmappedColumns(metadata)
+			appendUnmappedColumns(scratch, unmapped)
+			val messages = buildList {
+				mismatch?.message?.let { add(it) }
+				if (unmapped.isNotEmpty()) add(unmappedMessage(unmapped))
+			}
+			if (messages.isNotEmpty()) {
 				publishMigration(scratch)
-				throw mismatch
+				throw SchemaManagementException(messages.joinToString("\n"))
 			}
 		} finally {
 			scratch.delete()
 			StandardServiceRegistryBuilder.destroy(registry)
 		}
+	}
+
+	private fun unmappedColumns(metadata: Metadata): List<UnmappedColumn> {
+		val mapped = mappedTables(metadata)
+		if (mapped.isEmpty()) return emptyList()
+		DriverManager.getConnection(
+			environment.getRequiredProperty("spring.datasource.url"),
+			environment.getRequiredProperty("spring.datasource.username"),
+			environment.getRequiredProperty("spring.datasource.password"),
+		).use { connection ->
+			val found = mutableListOf<UnmappedColumn>()
+			connection.prepareStatement(
+				"""
+				select table_schema, table_name, column_name
+				from information_schema.columns
+				where table_schema = any (?) and table_name = any (?)
+				order by table_schema, table_name, ordinal_position
+				""".trimIndent(),
+			).use { statement ->
+				statement.setArray(1, connection.createArrayOf("text", mapped.map { it.schema }.distinct().toTypedArray()))
+				statement.setArray(2, connection.createArrayOf("text", mapped.map { it.table }.distinct().toTypedArray()))
+				statement.executeQuery().use { rows ->
+					while (rows.next()) {
+						val schema = rows.getString(1)
+						val table = rows.getString(2)
+						val column = rows.getString(3)
+						val match = mapped.find { it.schema == schema && it.table == table } ?: continue
+						if (column in match.columns) continue
+						found += UnmappedColumn(schema, table, column, columnHasValue(connection, schema, table, column))
+					}
+				}
+			}
+			return found
+		}
+	}
+
+	private fun mappedTables(metadata: Metadata): List<MappedTable> {
+		val tables = linkedMapOf<Pair<String, String>, MutableSet<String>>()
+		for (namespace in metadata.database.namespaces) {
+			for (table in namespace.tables) {
+				if (!table.isPhysicalTable) continue
+				val schema = table.schema?.trim('"')?.takeIf { it.isNotEmpty() } ?: "public"
+				val name = table.name.trim('"').lowercase()
+				val columns = tables.getOrPut(schema to name) { linkedSetOf() }
+				for (column in table.columns) {
+					columns += column.canonicalName.trim('"')
+				}
+			}
+		}
+		return tables.map { (key, columns) -> MappedTable(key.first, key.second, columns) }
+	}
+
+	private fun columnHasValue(connection: Connection, schema: String, table: String, column: String): Boolean {
+		val sql = "select exists (select 1 from ${quote(schema)}.${quote(table)} where ${quote(column)} is not null)"
+		connection.createStatement().use { statement ->
+			statement.executeQuery(sql).use { rows ->
+				rows.next()
+				return rows.getBoolean(1)
+			}
+		}
+	}
+
+	private fun appendUnmappedColumns(scratch: File, columns: List<UnmappedColumn>) {
+		if (columns.isEmpty()) return
+		val script = columns.joinToString(separator = "\n") { column ->
+			"""
+			do $$
+			begin
+				if exists (select 1 from ${quote(column.schema)}.${quote(column.table)} where ${quote(column.column)} is not null) then
+					raise exception 'column ${column.table}.${column.column} has a non-null value';
+				end if;
+				alter table ${quote(column.schema)}.${quote(column.table)} drop column ${quote(column.column)};
+			end
+			$$;
+			""".trimIndent()
+		}
+		val existing = scratch.readText()
+		val separator = if (existing.isEmpty() || existing.endsWith("\n")) "" else "\n"
+		scratch.appendText(separator + script + "\n")
+	}
+
+	private fun unmappedMessage(columns: List<UnmappedColumn>): String = columns.joinToString("\n") { column ->
+		val state = if (column.hasValue) "has a non-null value" else "is null for every row"
+		"Schema validation: unmapped column [${column.column}] in table [${column.table}] $state"
+	}
+
+	private fun quote(identifier: String): String {
+		require(identifier.matches(Regex("[A-Za-z_][A-Za-z0-9_]*"))) { "Refusing to emit an identifier: $identifier" }
+		return "\"$identifier\""
 	}
 
 	private fun publishMigration(scratch: File) {
@@ -119,6 +221,10 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 		val STAMP: DateTimeFormatter = DateTimeFormatter.ofPattern("yyMMdd_HHmm")
 		val log = LoggerFactory.getLogger(SchemaCheck::class.java)
 	}
+
+	private data class MappedTable(val schema: String, val table: String, val columns: Set<String>)
+
+	private data class UnmappedColumn(val schema: String, val table: String, val column: String, val hasValue: Boolean)
 }
 
 internal class ReadableForeignKeyNamingStrategy : ImplicitNamingStrategyJpaCompliantImpl() {

@@ -4,7 +4,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.UniqueConstraint
-import no1.payamax.api.config.http.r2dbc.Sequenced
+import no1.payamax.api.config.r2dbc.Sequenced
 import no1.payamax.api.modules.payamakreport.PayamakReportEntity
 import org.springframework.data.relational.core.mapping.Table
 import java.util.UUID
@@ -21,13 +21,18 @@ class PayamakRuleProcessResultReportEntity (
 	override var id: Long?,
 	override var globalId: UUID,
 
+	@jakarta.persistence.Transient
+	@org.springframework.data.relational.core.mapping.Column("report_id")
+	var reportId: Long?,
+
 	@ManyToOne
 	@JoinColumn(name = "report_id", referencedColumnName = "id")
+	@org.springframework.data.annotation.Transient
 	var payamakReport: PayamakReportEntity,
 	var processorName: String,
 	var processorVersion: String,
 	var generalRank: Float,
-	var userValuesRank: Float,
+	var userOverrideRank: Float?,
 	var processorProvidedComment: String,
 	var position: Int,
 ): Sequenced

@@ -1,18 +1,13 @@
-package no1.payamax.api.config.http.r2dbc
+package no1.payamax.api.config.r2dbc
 
-import org.reactivestreams.Publisher
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.convert.converter.Converter
 import org.springframework.data.convert.CustomConversions
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
 import org.springframework.data.r2dbc.dialect.DialectResolver
-import org.springframework.stereotype.Component
 import org.springframework.data.relational.core.mapping.NamingStrategy
-import org.springframework.data.r2dbc.mapping.event.BeforeConvertCallback
-import org.springframework.data.relational.core.sql.SqlIdentifier
 import org.springframework.r2dbc.core.DatabaseClient
-import reactor.core.publisher.Mono
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.Instant

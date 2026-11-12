@@ -1,4 +1,4 @@
-package no1.payamax.api.config.http.oauth
+package no1.payamax.api.config.oauth
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 import java.net.URLEncoder

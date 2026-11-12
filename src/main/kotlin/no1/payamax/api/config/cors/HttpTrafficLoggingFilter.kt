@@ -1,4 +1,4 @@
-package no1.payamax.api.config.http
+package no1.payamax.api.config.cors
 
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ReadListener

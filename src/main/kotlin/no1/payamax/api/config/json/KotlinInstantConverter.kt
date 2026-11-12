@@ -1,4 +1,4 @@
-package no1.payamax.api.config.http.json
+package no1.payamax.api.config.json
 
 import org.springframework.core.convert.converter.Converter
 import org.springframework.stereotype.Component

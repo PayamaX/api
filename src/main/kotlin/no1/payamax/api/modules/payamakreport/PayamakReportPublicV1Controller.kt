@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.RestController
 
 @RequestMapping("/v1/public/payamak-report")
 @RestController
-class PayamakReportPublicV1Controller()
+class PayamakReportPublicV1Controller(private val payamakReportPublicProvider: PayamakReportPublicContract)
 {
 	@PermitAll
 	@PostMapping
 	suspend fun post(
 		@RequestBody @Valid input: PayamakReportPublicInput,
-	): Unit = TODO()
+	): Unit = payamakReportPublicProvider.persist(input);
 }

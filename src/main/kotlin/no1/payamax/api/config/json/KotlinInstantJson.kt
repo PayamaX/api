@@ -1,4 +1,4 @@
-package no1.payamax.api.config.http.json
+package no1.payamax.api.config.json
 
 import io.swagger.v3.oas.models.media.StringSchema
 import org.springdoc.core.utils.SpringDocUtils

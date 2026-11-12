@@ -5,7 +5,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id as JpaId
 import jakarta.persistence.Table as JpaTable
 import jakarta.persistence.UniqueConstraint
-import no1.payamax.api.config.http.r2dbc.Sequenced
+import no1.payamax.api.config.r2dbc.Sequenced
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
 import java.time.Instant

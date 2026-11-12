@@ -3,7 +3,7 @@ package no1.payamax.api.oauth
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.Paths
-import no1.payamax.api.config.http.oauth.OpenApiGroups
+import no1.payamax.api.config.oauth.OpenApiGroups
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springdoc.core.models.GroupedOpenApi

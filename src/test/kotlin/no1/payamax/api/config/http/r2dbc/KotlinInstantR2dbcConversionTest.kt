@@ -1,5 +1,6 @@
 package no1.payamax.api.config.http.r2dbc
 
+import no1.payamax.api.config.r2dbc.kotlinInstantConverters
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.core.convert.support.GenericConversionService

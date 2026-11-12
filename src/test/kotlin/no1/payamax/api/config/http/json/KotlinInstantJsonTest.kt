@@ -2,6 +2,7 @@ package no1.payamax.api.config.http.json
 
 import io.swagger.v3.core.converter.AnnotatedType
 import io.swagger.v3.core.converter.ModelConverters
+import no1.payamax.api.config.json.KotlinInstantJson
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows

@@ -1,6 +1,6 @@
 package no1.payamax.api.r2dbc
 
-import no1.payamax.api.config.http.r2dbc.Sorts
+import no1.payamax.api.config.r2dbc.Sorts
 import no1.payamax.api.exceptions.InvalidValueException
 import no1.payamax.api.modules.rankedorigin.RankedOriginEntity
 import org.junit.jupiter.api.Assertions.assertEquals

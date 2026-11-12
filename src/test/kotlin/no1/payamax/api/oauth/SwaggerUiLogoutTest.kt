@@ -1,6 +1,6 @@
 package no1.payamax.api.oauth
 
-import no1.payamax.api.config.http.oauth.injectIdpLogoutPlugin
+import no1.payamax.api.config.oauth.injectIdpLogoutPlugin
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

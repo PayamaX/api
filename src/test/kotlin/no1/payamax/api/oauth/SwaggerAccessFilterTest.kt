@@ -4,8 +4,8 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
-import no1.payamax.api.config.http.oauth.SwaggerAccessFilter
-import no1.payamax.api.config.http.oauth.SwaggerAccessProperties
+import no1.payamax.api.config.oauth.SwaggerAccessFilter
+import no1.payamax.api.config.oauth.SwaggerAccessProperties
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse

@@ -1,6 +1,6 @@
 package no1.payamax.api.modules.rankedorigin
 
-import no1.payamax.api.config.http.json.KotlinInstantConverter
+import no1.payamax.api.config.json.KotlinInstantConverter
 import no1.payamax.api.exceptions.GlobalExceptionHandler
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

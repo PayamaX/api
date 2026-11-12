@@ -22,14 +22,14 @@ add
 	column reporter_user_global_id uuid;
 
 create table payamak_rule_process_result_report (
-	id bigint not null,
-	general_rank float4 not null,
+	id bigint not null default nextval('id'),
 	global_id uuid,
 	position integer not null,
 	processor_name varchar(255),
-	processor_provided_comment varchar(255),
 	processor_version varchar(255),
-	user_values_rank float4 not null,
+	processor_provided_comment varchar(255),
+	general_rank float4 not null,
+	user_override_rank float4,
 	report_id bigint,
 	primary key (id)
 );
@@ -54,3 +54,9 @@ alter table
 	if exists payamak_rule_process_result_report
 add
 	constraint fk__payamak_rule_process_result_report__report_id foreign key (report_id) references payamak_report;
+
+
+alter table "public"."payamak_report" drop column "decided_diagnostics";
+alter table "public"."payamak_report" drop column "desired_diagnostics";
+alter table "public"."payamak_report" drop column "repeated_count";
+alter table "public"."payamak_report" drop column "reporter";

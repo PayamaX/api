@@ -1,4 +1,4 @@
-package no1.payamax.api.config.http
+package no1.payamax.api.config.cors
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean

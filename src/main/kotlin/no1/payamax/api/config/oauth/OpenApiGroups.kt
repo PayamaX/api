@@ -1,4 +1,4 @@
-package no1.payamax.api.config.http.oauth
+package no1.payamax.api.config.oauth
 
 import io.swagger.v3.oas.models.OpenAPI
 import org.springdoc.core.customizers.OpenApiCustomizer

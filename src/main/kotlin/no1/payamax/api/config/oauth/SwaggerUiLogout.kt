@@ -1,4 +1,4 @@
-package no1.payamax.api.config.http.oauth
+package no1.payamax.api.config.oauth
 
 import jakarta.servlet.http.HttpServletRequest
 import org.springdoc.core.properties.SwaggerUiConfigProperties

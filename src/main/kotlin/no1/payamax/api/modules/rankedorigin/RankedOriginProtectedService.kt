@@ -1,8 +1,8 @@
 package no1.payamax.api.modules.rankedorigin
 
 import kotlinx.coroutines.flow.collect
-import no1.payamax.api.config.http.r2dbc.Sorts
-import no1.payamax.api.config.http.r2dbc.toPage
+import no1.payamax.api.config.r2dbc.Sorts
+import no1.payamax.api.config.r2dbc.toPage
 import no1.payamax.api.exceptions.EntityNotFoundException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable

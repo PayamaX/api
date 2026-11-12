@@ -1,8 +1,8 @@
 package no1.payamax.api.http
 
-import no1.payamax.api.config.http.CorsProperties
-import no1.payamax.api.config.http.HttpCorsConfiguration
-import no1.payamax.api.config.http.configurationSource
+import no1.payamax.api.config.cors.CorsProperties
+import no1.payamax.api.config.cors.HttpCorsConfiguration
+import no1.payamax.api.config.cors.configurationSource
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
