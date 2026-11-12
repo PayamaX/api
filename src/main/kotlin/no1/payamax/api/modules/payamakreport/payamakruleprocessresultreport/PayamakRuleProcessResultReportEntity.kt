@@ -1,5 +1,8 @@
 package no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport
 
+import jakarta.persistence.Entity
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.UniqueConstraint
 import no1.payamax.api.config.http.r2dbc.Sequenced
 import no1.payamax.api.modules.payamakreport.PayamakReportEntity
@@ -11,9 +14,15 @@ import jakarta.persistence.Table as JpaTable
 	UniqueConstraint(name = "uq__payamak_rule_process_result_report__global_id", columnNames = ["global_id"])
 ])
 @Table
+@Entity
 class PayamakRuleProcessResultReportEntity (
+	@jakarta.persistence.Id
+	@org.springframework.data.annotation.Id
 	override var id: Long?,
 	override var globalId: UUID,
+
+	@ManyToOne
+	@JoinColumn(name = "report_id", referencedColumnName = "id")
 	var payamakReport: PayamakReportEntity,
 	var processorName: String,
 	var processorVersion: String,
