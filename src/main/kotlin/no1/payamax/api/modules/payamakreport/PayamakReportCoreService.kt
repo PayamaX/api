@@ -18,13 +18,17 @@ class PayamakReportCoreService(
 			val entity = PayamakReportEntity(
 				null,
 				UUID.randomUUID(),
+				PayamakReportStates.REVIEWED,
 				item.origin,
 				item.body,
 				item.sha512,
 				item.reporterUserGlobalId,
 				item.reporterComment,
+				null,
+				false,
 				item.detectedDiagnostics,
 				item.expectedDiagnostics,
+				null,
 			)
 			val saved = repo.save(entity)
 			for (proc in item.processorsReports) {

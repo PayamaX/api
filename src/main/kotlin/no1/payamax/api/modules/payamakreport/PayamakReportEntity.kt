@@ -19,11 +19,15 @@ class PayamakReportEntity(
 	@Id
 	override var id: Long? = null,
 	override var globalId: UUID,
+	@Enumerated(EnumType.STRING) var state: PayamakReportStates,
 	var origin: String,
 	var body: String?,
 	var sha512: String?,
 	var reporterUserGlobalId: UUID?,
 	var reporterComment: String?,
+	var reviewerComment: String?,
+	var flagged: Boolean,
 	@Enumerated(EnumType.STRING) var detectedDiagnostics: PayamakReportDiagnostics,
 	@Enumerated(EnumType.STRING) var expectedDiagnostics: PayamakReportDiagnostics?,
+	@Enumerated(EnumType.STRING) var decidedDiagnostics: PayamakReportDiagnostics?,
 ) : Sequenced
