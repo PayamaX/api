@@ -3,7 +3,6 @@ package no1.payamax.api.modules.rankedorigin
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
 import no1.payamax.api.TestsSuper
-import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -31,13 +30,6 @@ abstract class RankedOriginsProtectedV1TestBase : TestsSuper() {
 
 	@field:Autowired
 	protected lateinit var databaseClient: DatabaseClient
-
-	@BeforeEach
-	fun clearOrigins() {
-		runBlocking {
-			databaseClient.sql("DELETE FROM ranked_origin").fetch().rowsUpdated().awaitSingle()
-		}
-	}
 
 	protected fun getOrigin(globalId: UUID, token: String? = null): ResultActions {
 		var request = get("$ORIGINS/$globalId").accept(MediaType.APPLICATION_JSON)

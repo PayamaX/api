@@ -7,7 +7,7 @@ import java.util.*
 data class PayamakReportCoreItemInput(
 	val origin: String,
 	val body: String?,
-	val hash: String?,
+	val sha512: String?,
 	val moment: Instant,
 	val reporterUserGlobalId: UUID?,
 	val reporterComment: String?,
@@ -25,7 +25,7 @@ data class PayamakReportCoreItemInput(
 		if (calcedRank != other.calcedRank) return false
 		if (origin != other.origin) return false
 		if (body != other.body) return false
-		if (hash != other.hash) return false
+		if (sha512 != other.sha512) return false
 		if (moment != other.moment) return false
 		if (reporterUserGlobalId != other.reporterUserGlobalId) return false
 		if (reporterComment != other.reporterComment) return false
@@ -40,7 +40,7 @@ data class PayamakReportCoreItemInput(
 		var result = calcedRank.hashCode()
 		result = 31 * result + origin.hashCode()
 		result = 31 * result + body.hashCode()
-		result = 31 * result + hash.hashCode()
+		result = 31 * result + sha512.hashCode()
 		result = 31 * result + moment.hashCode()
 		result = 31 * result + reporterUserGlobalId.hashCode()
 		result = 31 * result + reporterComment.hashCode()
@@ -54,7 +54,7 @@ data class PayamakReportCoreItemInput(
 		fun core(item: PayamakReportPublicItemInput): PayamakReportCoreItemInput = PayamakReportCoreItemInput(
 			item.origin,
 			item.body,
-			item.hash,
+			item.sha512,
 			item.moment,
 			item.reporterUserGlobalId,
 			item.reporterComment,

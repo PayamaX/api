@@ -205,7 +205,7 @@ class RankedOriginsProtectedV1GetTest : RankedOriginsProtectedV1TestBase() {
 	@WithMockUser(roles = ["ADMIN"])
 	fun `get returns an empty page when nothing is stored`() {
 		// Arrange
-		// clearOrigins() leaves the catalog empty.
+		// clearDatabase() leaves the catalog empty.
 
 		// Act
 		val page = getPage()

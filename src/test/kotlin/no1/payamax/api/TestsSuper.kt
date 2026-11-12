@@ -3,9 +3,11 @@ package no1.payamax.api
 import com.github.dockerjava.api.command.CreateContainerCmd
 import com.github.dockerjava.api.model.HostConfig
 import com.github.dockerjava.api.model.PortBinding
+import org.junit.jupiter.api.BeforeEach
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.GenericContainer
+import java.sql.DriverManager
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.ImagePullPolicy
@@ -61,12 +63,59 @@ abstract class TestsSuper {
 
 	protected fun untrustedToken(): String = accessToken(REALM, UNTRUSTED_CLIENT, USERNAME, PASSWORD)
 
+	/**
+	 * Empties every application table and restarts every sequence in `public` and `audit`.
+	 * `flyway_schema_history` stays so later tests still see the applied migrations.
+	 */
+	@BeforeEach
+	protected fun clearDatabase() {
+		DriverManager.getConnection(jdbcUrl("pax"), FLYWAY_USER, FLYWAY_PASSWORD).use { connection ->
+			connection.createStatement().use { statement ->
+				statement.execute(CLEAR_DATABASE)
+			}
+		}
+	}
+
 	companion object {
 		private const val REALM = "pax"
 		private const val TRUSTED_CLIENT = "SwaggerUI"
 		private const val UNTRUSTED_CLIENT = "admin-cli"
 		private const val USERNAME = "user@pax.ir"
 		private const val PASSWORD = "password"
+		private const val FLYWAY_USER = "pax_ddl_fw"
+		private const val FLYWAY_PASSWORD = "password"
+		private val CLEAR_DATABASE = """
+			DO ${'$'}clear${'$'}
+			DECLARE
+				tables text;
+				seq record;
+			BEGIN
+				SELECT string_agg(format('%I.%I', n.nspname, c.relname), ', ')
+				INTO tables
+				FROM pg_class c
+				JOIN pg_namespace n ON n.oid = c.relnamespace
+				WHERE c.relkind = 'r'
+					AND n.nspname IN ('public', 'audit')
+					AND c.relname <> 'flyway_schema_history'
+					AND pg_get_userbyid(c.relowner) = current_user;
+
+				IF tables IS NOT NULL THEN
+					EXECUTE 'TRUNCATE TABLE ' || tables || ' RESTART IDENTITY CASCADE';
+				END IF;
+
+				FOR seq IN
+					SELECT n.nspname AS schema_name, c.relname AS sequence_name
+					FROM pg_class c
+					JOIN pg_namespace n ON n.oid = c.relnamespace
+					WHERE c.relkind = 'S'
+						AND n.nspname IN ('public', 'audit')
+						AND pg_get_userbyid(c.relowner) = current_user
+				LOOP
+					EXECUTE format('ALTER SEQUENCE %I.%I RESTART', seq.schema_name, seq.sequence_name);
+				END LOOP;
+			END
+			${'$'}clear${'$'};
+		""".trimIndent()
 		private val DOTENV_PAX_TAG = Regex("""(?:export\s+)?PAX_TAG\s*=\s*(.*)""")
 
 		private val tag = imageTag()
@@ -134,8 +183,8 @@ abstract class TestsSuper {
 			registry.add("spring.r2dbc.username") { "pax_dml_api" }
 			registry.add("spring.r2dbc.password") { "password" }
 			registry.add("spring.flyway.url") { jdbcUrl("pax") }
-			registry.add("spring.flyway.user") { "pax_ddl_fw" }
-			registry.add("spring.flyway.password") { "password" }
+			registry.add("spring.flyway.user") { FLYWAY_USER }
+			registry.add("spring.flyway.password") { FLYWAY_PASSWORD }
 			registry.add("spring.datasource.url") { jdbcUrl("pax") }
 			registry.add("spring.datasource.username") { "pax_dml_api" }
 			registry.add("spring.datasource.password") { "password" }

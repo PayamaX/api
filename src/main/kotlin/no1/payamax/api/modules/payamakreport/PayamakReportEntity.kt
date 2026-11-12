@@ -21,7 +21,7 @@ class PayamakReportEntity(
 	override var globalId: UUID,
 	var origin: String,
 	var body: String?,
-	var hash: String?,
+	var sha512: String?,
 	var reporterUserGlobalId: UUID?,
 	var reporterComment: String?,
 	@Enumerated(EnumType.STRING) var detectedDiagnostics: PayamakReportDiagnostics,

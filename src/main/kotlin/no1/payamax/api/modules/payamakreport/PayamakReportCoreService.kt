@@ -20,7 +20,7 @@ class PayamakReportCoreService(
 				UUID.randomUUID(),
 				item.origin,
 				item.body,
-				item.hash,
+				item.sha512,
 				item.reporterUserGlobalId,
 				item.reporterComment,
 				item.detectedDiagnostics,

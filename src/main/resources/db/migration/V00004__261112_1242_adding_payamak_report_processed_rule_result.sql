@@ -60,3 +60,4 @@ alter table "public"."payamak_report" drop column "decided_diagnostics";
 alter table "public"."payamak_report" drop column "desired_diagnostics";
 alter table "public"."payamak_report" drop column "repeated_count";
 alter table "public"."payamak_report" drop column "reporter";
+alter table "public"."payamak_report" rename column hash to sha512;
