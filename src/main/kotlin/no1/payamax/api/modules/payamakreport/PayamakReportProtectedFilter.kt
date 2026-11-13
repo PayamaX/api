@@ -6,5 +6,5 @@ data class PayamakReportProtectedFilter(
 	val state: List<PayamakReportStates>?,
 	val globalId: UUID? = null,
 	val origin: String? = null,
-	val flagged: Boolean = false,
+	val onlyFlagged: Boolean = false,
 )

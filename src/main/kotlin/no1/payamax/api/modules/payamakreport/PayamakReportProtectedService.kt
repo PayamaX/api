@@ -89,7 +89,7 @@ class PayamakReportProtectedService(
 			if (!filter.origin.isNullOrBlank()) {
 				add(Criteria.where("origin").`is`(filter.origin))
 			}
-			if (filter.flagged) {
+			if (filter.onlyFlagged) {
 				add(Criteria.where("flagged").`is`(true))
 			}
 		}
