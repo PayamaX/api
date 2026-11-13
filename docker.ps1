@@ -1,7 +1,7 @@
 $envNames = @( & (Join-Path $PSScriptRoot "env.ps1") )
-& (Join-Path $PSScriptRoot "tag.ps1")
+$paxTag = & (Join-Path $PSScriptRoot "tag.ps1")
 
-echo $env:PAX_TAG
+echo $paxTag
 
 $buildArgs = @()
 foreach ($name in $envNames) {
@@ -13,4 +13,4 @@ foreach ($name in $envNames) {
     $buildArgs += $name
 }
 
-docker build --load @buildArgs -t "ghcr.io/payamax/api-local:$env:PAX_TAG" -f ./Dockerfile ./
+docker build --load @buildArgs -t "ghcr.io/payamax/api-local:$paxTag" -f ./Dockerfile ./

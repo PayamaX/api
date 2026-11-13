@@ -1,5 +1,6 @@
 package no1.payamax.api.modules.rankedorigin
 
+import io.swagger.v3.oas.annotations.Operation
 import jakarta.annotation.security.PermitAll
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
@@ -15,6 +16,7 @@ import java.time.Instant
 @RestController
 class RankedOriginsPublicV1Controller(private val publicProvider: RankedOriginPublicContract)
 {
+	@Operation(operationId = "getPublicRankedOriginChanges")
 	@PermitAll
 	@GetMapping("/changes")
 	suspend fun get(
