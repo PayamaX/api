@@ -12,12 +12,16 @@ import java.util.*
 
 @Service
 class RankedOriginProtectedService(
-	private val coreProvider: RankedOriginCoreService,
+	private val coreProvider: RankedOriginCoreContract,
 	private val repository: RankedOriginRepository,
 	private val sorts: Sorts,
 ) : RankedOriginProtectedContract {
-	override suspend fun get(globalId: UUID): RankedOriginProtectedPortable {
-		return repository.findOneByGlobalId(globalId)?.let { RankedOriginProtectedPortable.create(it) } ?: throw EntityNotFoundException(RankedOriginEntity::class.java, globalId)
+
+	override suspend fun get(identifier: String): RankedOriginProtectedPortable {
+		val globalId = runCatching { UUID.fromString(identifier) }.getOrNull()
+		val entity = if (globalId != null) (repository.findOneByGlobalId(globalId) ?: throw EntityNotFoundException(RankedOriginEntity::class.java, globalId))
+		else (repository.findOneByOrigin(identifier) ?: throw EntityNotFoundException(RankedOriginEntity::class.java, "origin", identifier))
+		return RankedOriginProtectedPortable.create(entity)
 	}
 
 	override suspend fun paged(pageable: Pageable): Page<RankedOriginProtectedPortable> {

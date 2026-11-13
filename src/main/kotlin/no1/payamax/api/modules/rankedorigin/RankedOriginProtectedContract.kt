@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable
 import java.util.UUID
 
 interface RankedOriginProtectedContract {
-	suspend fun get(globalId: UUID): RankedOriginProtectedPortable
+	suspend fun get(identifier: String): RankedOriginProtectedPortable
 	suspend fun paged(pageable: Pageable): Page<RankedOriginProtectedPortable>
 	suspend fun persist(input: RankedOriginProtectedInput): RankedOriginProtectedPortable
 	suspend fun delete(globalId: UUID) : RankedOriginProtectedPortable
