@@ -2,6 +2,7 @@ package no1.payamax.api.modules.rankedorigin
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.Index
 import jakarta.persistence.Id as JpaId
 import jakarta.persistence.Table as JpaTable
 import jakarta.persistence.UniqueConstraint
@@ -12,10 +13,16 @@ import java.time.Instant
 import java.util.UUID
 
 @Entity
-@JpaTable(uniqueConstraints = [
-	UniqueConstraint(name = "uq__ranked_origin__global_id", columnNames = ["global_id"]),
-	UniqueConstraint(name = "uq__ranked_origin__origin", columnNames = ["origin"]),
-])
+@JpaTable(
+	uniqueConstraints = [
+		UniqueConstraint(name = "uq__ranked_origin__global_id", columnNames = ["global_id"]),
+		UniqueConstraint(name = "uq__ranked_origin__origin", columnNames = ["origin"]),
+	],
+	indexes = [
+		Index("ix__ranked_origin__owner_global_id", columnList = "owner_global_id"),
+		Index("ix__ranked_origin__position", columnList = "position"),
+	],
+)
 @Table
 class RankedOriginEntity(
 	@JpaId

@@ -4,8 +4,6 @@ import no1.payamax.api.config.json.KotlinInstantConverter
 import no1.payamax.api.exceptions.GlobalExceptionHandler
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
 import org.springframework.format.support.DefaultFormattingConversionService
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get

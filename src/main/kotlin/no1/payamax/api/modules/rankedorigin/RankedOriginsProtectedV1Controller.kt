@@ -2,8 +2,8 @@ package no1.payamax.api.modules.rankedorigin
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PagedModel
 import org.springframework.security.access.annotation.Secured
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
@@ -23,7 +23,7 @@ class RankedOriginsProtectedV1Controller(private val protectedProvider: RankedOr
 
 	@Operation(operationId = "getProtectedRankedOrigins")
 	@GetMapping
-	suspend fun get(pageable: Pageable): Page<RankedOriginProtectedPortable> = protectedProvider.paged(pageable)
+	suspend fun get(pageable: Pageable): PagedModel<RankedOriginProtectedPortable> = protectedProvider.paged(pageable)
 
 	@Operation(operationId = "postProtectedRankedOrigin")
 	@PostMapping

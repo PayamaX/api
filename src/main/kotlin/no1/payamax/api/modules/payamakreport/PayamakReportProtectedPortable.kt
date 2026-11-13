@@ -1,5 +1,7 @@
 package no1.payamax.api.modules.payamakreport
 
+import no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport.PayamakRuleProcessResultReportEntity
+import no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport.PayamakRuleProcessResultReportProtectedPortable
 import java.util.UUID
 
 class PayamakReportProtectedPortable(
@@ -17,4 +19,21 @@ class PayamakReportProtectedPortable(
 	val expectedDiagnostics: PayamakReportDiagnostics?,
 	val decidedDiagnostics: PayamakReportDiagnostics?,
 ) {
+	companion object {
+		fun create(entity: PayamakReportEntity) = PayamakReportProtectedPortable(
+			entity.id,
+			entity.globalId,
+			entity.state,
+			entity.origin,
+			entity.body,
+			entity.sha512,
+			entity.reporterUserGlobalId,
+			entity.reporterComment,
+			entity.reviewerComment,
+			entity.flagged,
+			entity.detectedDiagnostics,
+			entity.expectedDiagnostics,
+			entity.decidedDiagnostics,
+		)
+	}
 }

@@ -46,6 +46,9 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 			AvailableSettings.HBM2DDL_SCRIPTS_CREATE_APPEND to "false",
 			AvailableSettings.PREFERRED_INSTANT_JDBC_TYPE to instantJdbcType(),
 			AvailableSettings.PREFER_NATIVE_ENUM_TYPES to (environment.getProperty(NATIVE_ENUMS) ?: "false"),
+			// Hibernate does not validate indexes unless this is set, so a missing index
+			// never fails the check and the update script that creates it is discarded.
+			AvailableSettings.INDEX_VALIDATION to "ALL",
 		)
 		val scratch = File.createTempFile("schema-", ".sql")
 		settings[AvailableSettings.JAKARTA_HBM2DDL_SCRIPTS_CREATE_TARGET] = scratch.absolutePath
@@ -71,9 +74,12 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 			}
 			val unmapped = unmappedColumns(metadata)
 			appendUnmappedColumns(scratch, unmapped)
+			val indexes = indexChanges(metadata, scratch, validationFailed = mismatch != null)
+			appendIndexChanges(scratch, indexes)
 			val messages = buildList {
 				mismatch?.message?.let { add(it) }
 				if (unmapped.isNotEmpty()) add(unmappedMessage(unmapped))
+				if (indexes.isNotEmpty()) add(indexMessage(indexes))
 			}
 			if (messages.isNotEmpty()) {
 				publishMigration(scratch)
@@ -164,6 +170,153 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 		scratch.appendText(separator + script + "\n")
 	}
 
+	private fun indexChanges(metadata: Metadata, scratch: File, validationFailed: Boolean): List<IndexChange> {
+		val tables = mappedTables(metadata)
+		if (tables.isEmpty()) return emptyList()
+		val mapped = mappedIndexes(metadata)
+		val actual = databaseIndexes(tables)
+		val script = scratch.readText()
+		val changes = mutableListOf<IndexChange>()
+		for (desired in mapped.values) {
+			val existing = actual[IndexKey(desired.schema, desired.table, desired.name)]
+			if (existing == null) {
+				val alreadyScripted = scriptCreates(script, desired.name)
+				if (alreadyScripted && validationFailed) continue
+				changes += IndexChange(
+					desired.schema,
+					desired.table,
+					desired.name,
+					if (alreadyScripted) emptyList() else listOf(createIndex(desired)),
+					"Schema validation: missing index [${desired.name}] in table [${desired.table}]",
+				)
+				continue
+			}
+			if (existing.matches(desired)) continue
+			changes += IndexChange(
+				desired.schema,
+				desired.table,
+				desired.name,
+				listOf(dropIndex(existing), createIndex(desired)),
+				"Schema validation: index [${desired.name}] in table [${desired.table}] is ${existing.describe()} and the model declares ${desired.describe()}",
+			)
+		}
+		for (existing in actual.values) {
+			if (IndexKey(existing.schema, existing.table, existing.name) in mapped) continue
+			changes += IndexChange(
+				existing.schema,
+				existing.table,
+				existing.name,
+				listOf(dropIndex(existing)),
+				"Schema validation: unmapped index [${existing.name}] in table [${existing.table}]",
+			)
+		}
+		return changes.sortedWith(compareBy({ it.schema }, { it.table }, { it.name }))
+	}
+
+	private fun mappedIndexes(metadata: Metadata): Map<IndexKey, MappedIndex> {
+		val indexes = linkedMapOf<IndexKey, MappedIndex>()
+		for (namespace in metadata.database.namespaces) {
+			for (table in namespace.tables) {
+				if (!table.isPhysicalTable) continue
+				val schema = table.schema?.trim('"')?.takeIf { it.isNotEmpty() } ?: "public"
+				val tableName = table.name.trim('"').lowercase()
+				for (index in table.indexes.values) {
+					val name = index.name?.trim('"')?.lowercase()?.takeIf { it.isNotEmpty() } ?: continue
+					val columns = index.selectables.map { it.text.trim('"').lowercase() }
+					val mapped = MappedIndex(schema, tableName, name, columns, index.isUnique)
+					indexes[IndexKey(schema, tableName, name)] = mapped
+				}
+			}
+		}
+		return indexes
+	}
+
+	private fun databaseIndexes(tables: List<MappedTable>): Map<IndexKey, DatabaseIndex> {
+		val found = linkedMapOf<IndexKey, DatabaseIndex>()
+		DriverManager.getConnection(
+			environment.getRequiredProperty("spring.datasource.url"),
+			environment.getRequiredProperty("spring.datasource.username"),
+			environment.getRequiredProperty("spring.datasource.password"),
+		).use { connection ->
+			connection.prepareStatement(
+				"""
+				select n.nspname as schema_name,
+					t.relname as table_name,
+					i.relname as index_name,
+					ix.indisunique as is_unique,
+					ix.indpred is not null as is_partial,
+					a.attname as column_name
+				from pg_catalog.pg_index ix
+				join pg_catalog.pg_class i on i.oid = ix.indexrelid
+				join pg_catalog.pg_class t on t.oid = ix.indrelid
+				join pg_catalog.pg_namespace n on n.oid = t.relnamespace
+				join lateral unnest(ix.indkey) with ordinality as k(attnum, ord)
+					on k.ord <= ix.indnkeyatts
+				left join pg_catalog.pg_attribute a
+					on a.attrelid = t.oid and a.attnum = k.attnum and k.attnum > 0
+				where n.nspname = any (?)
+					and t.relname = any (?)
+					and not ix.indisprimary
+					and not exists (
+						select 1 from pg_catalog.pg_constraint c where c.conindid = ix.indexrelid
+					)
+				order by n.nspname, t.relname, i.relname, k.ord
+				""".trimIndent(),
+			).use { statement ->
+				statement.setArray(1, connection.createArrayOf("text", tables.map { it.schema }.distinct().toTypedArray()))
+				statement.setArray(2, connection.createArrayOf("text", tables.map { it.table }.distinct().toTypedArray()))
+				statement.executeQuery().use { rows ->
+					while (rows.next()) {
+						val schema = rows.getString("schema_name")
+						val table = rows.getString("table_name")
+						val name = rows.getString("index_name")
+						val key = IndexKey(schema, table, name)
+						val index = found.getOrPut(key) {
+							DatabaseIndex(
+								schema,
+								table,
+								name,
+								rows.getBoolean("is_unique"),
+								rows.getBoolean("is_partial"),
+								false,
+								mutableListOf(),
+							)
+						}
+						val column = rows.getString("column_name")
+						if (column == null) index.expression = true else index.columns += column.lowercase()
+					}
+				}
+			}
+		}
+		return found
+	}
+
+	private fun scriptCreates(script: String, indexName: String): Boolean {
+		val name = Regex.escape(indexName)
+		return Regex("""(?i)create\s+(?:unique\s+)?index\s+(?:if\s+not\s+exists\s+)?(?:"$name"|$name)\b""")
+			.containsMatchIn(script)
+	}
+
+	private fun createIndex(index: MappedIndex): String {
+		val unique = if (index.unique) "unique " else ""
+		val columns = index.columns.joinToString(", ") { quote(it) }
+		return "create ${unique}index ${quote(index.name)} on ${quote(index.schema)}.${quote(index.table)} ($columns);"
+	}
+
+	private fun dropIndex(index: DatabaseIndex): String =
+		"drop index if exists ${quote(index.schema)}.${quote(index.name)};"
+
+	private fun appendIndexChanges(scratch: File, changes: List<IndexChange>) {
+		val script = changes.flatMap { it.statements }.filter { it.isNotBlank() }.joinToString("\n")
+		if (script.isBlank()) return
+		val existing = scratch.readText()
+		val separator = if (existing.isEmpty() || existing.endsWith("\n")) "" else "\n"
+		scratch.appendText(separator + script + "\n")
+	}
+
+	private fun indexMessage(changes: List<IndexChange>): String =
+		changes.joinToString("\n") { it.message }
+
 	private fun unmappedMessage(columns: List<UnmappedColumn>): String = columns.joinToString("\n") { column ->
 		val state = if (column.hasValue) "has a non-null value" else "is null for every row"
 		"Schema validation: unmapped column [${column.column}] in table [${column.table}] $state"
@@ -225,6 +378,47 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 	private data class MappedTable(val schema: String, val table: String, val columns: Set<String>)
 
 	private data class UnmappedColumn(val schema: String, val table: String, val column: String, val hasValue: Boolean)
+
+	private data class IndexKey(val schema: String, val table: String, val name: String)
+
+	private data class MappedIndex(
+		val schema: String,
+		val table: String,
+		val name: String,
+		val columns: List<String>,
+		val unique: Boolean,
+	) {
+		fun describe(): String = indexDescription(unique, columns, expression = false)
+	}
+
+	private data class DatabaseIndex(
+		val schema: String,
+		val table: String,
+		val name: String,
+		val unique: Boolean,
+		val partial: Boolean,
+		var expression: Boolean,
+		val columns: MutableList<String>,
+	) {
+		fun matches(mapped: MappedIndex): Boolean =
+			!partial && !expression && unique == mapped.unique && columns == mapped.columns
+
+		fun describe(): String = indexDescription(unique, columns, expression || partial)
+	}
+
+	private data class IndexChange(
+		val schema: String,
+		val table: String,
+		val name: String,
+		val statements: List<String>,
+		val message: String,
+	)
+}
+
+private fun indexDescription(unique: Boolean, columns: List<String>, expression: Boolean): String {
+	val kind = if (unique) "unique " else ""
+	val body = if (expression) "an expression" else columns.joinToString(", ")
+	return "$kind($body)"
 }
 
 internal class ReadableForeignKeyNamingStrategy : ImplicitNamingStrategyJpaCompliantImpl() {

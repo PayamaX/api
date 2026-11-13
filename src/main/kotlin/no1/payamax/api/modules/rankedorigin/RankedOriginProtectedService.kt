@@ -4,8 +4,8 @@ import kotlinx.coroutines.flow.collect
 import no1.payamax.api.config.r2dbc.Sorts
 import no1.payamax.api.config.r2dbc.toPage
 import no1.payamax.api.exceptions.EntityNotFoundException
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PagedModel
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.util.*
@@ -24,9 +24,10 @@ class RankedOriginProtectedService(
 		return RankedOriginProtectedPortable.create(entity)
 	}
 
-	override suspend fun paged(pageable: Pageable): Page<RankedOriginProtectedPortable> {
+	override suspend fun paged(pageable: Pageable): PagedModel<RankedOriginProtectedPortable> {
 		sorts.require(pageable, RankedOriginEntity::class.java)
-		return repository.findBy(pageable).toPage(pageable, repository.count()).map { RankedOriginProtectedPortable.create(it) }
+		val page = repository.findBy(pageable).toPage(pageable, repository.count()).map { RankedOriginProtectedPortable.create(it) }
+		return PagedModel(page)
 	}
 
 	override suspend fun persist(input: RankedOriginProtectedInput): RankedOriginProtectedPortable {

@@ -118,8 +118,8 @@ class RankedOriginsProtectedV1GetTest : RankedOriginsProtectedV1TestBase() {
 		page
 			.andExpect(status().isOk)
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-			.andExpect(jsonPath("$.totalElements").value(2))
-			.andExpect(jsonPath("$.number").value(0))
+			.andExpect(jsonPath("$.page.totalElements").value(2))
+			.andExpect(jsonPath("$.page.number").value(0))
 			.andExpect(jsonPath("$.content.length()").value(2))
 			.andExpect(jsonPath("$.content[0].globalId").value(ids[0]))
 			.andExpect(jsonPath("$.content[0].origin").value("PayamaX"))
@@ -151,10 +151,10 @@ class RankedOriginsProtectedV1GetTest : RankedOriginsProtectedV1TestBase() {
 		// Assert
 		firstPage
 			.andExpect(status().isOk)
-			.andExpect(jsonPath("$.totalElements").value(3))
-			.andExpect(jsonPath("$.totalPages").value(2))
-			.andExpect(jsonPath("$.size").value(2))
-			.andExpect(jsonPath("$.number").value(0))
+			.andExpect(jsonPath("$.page.totalElements").value(3))
+			.andExpect(jsonPath("$.page.totalPages").value(2))
+			.andExpect(jsonPath("$.page.size").value(2))
+			.andExpect(jsonPath("$.page.number").value(0))
 			.andExpect(jsonPath("$.content.length()").value(2))
 			.andExpect(jsonPath("$.content[0].origin").value("PayamaX"))
 			.andExpect(jsonPath("$.content[0].position").value(1))
@@ -167,8 +167,8 @@ class RankedOriginsProtectedV1GetTest : RankedOriginsProtectedV1TestBase() {
 		// Assert
 		secondPage
 			.andExpect(status().isOk)
-			.andExpect(jsonPath("$.totalElements").value(3))
-			.andExpect(jsonPath("$.number").value(1))
+			.andExpect(jsonPath("$.page.totalElements").value(3))
+			.andExpect(jsonPath("$.page.number").value(1))
 			.andExpect(jsonPath("$.content.length()").value(1))
 			.andExpect(jsonPath("$.content[0].origin").value("09121234567"))
 			.andExpect(jsonPath("$.content[0].ownerGlobalId").exists())
@@ -179,7 +179,7 @@ class RankedOriginsProtectedV1GetTest : RankedOriginsProtectedV1TestBase() {
 		// Assert
 		pastTheEnd
 			.andExpect(status().isOk)
-			.andExpect(jsonPath("$.totalElements").value(3))
+			.andExpect(jsonPath("$.page.totalElements").value(3))
 			.andExpect(jsonPath("$.content.length()").value(0))
 	}
 
@@ -213,7 +213,7 @@ class RankedOriginsProtectedV1GetTest : RankedOriginsProtectedV1TestBase() {
 		// Assert
 		page
 			.andExpect(status().isOk)
-			.andExpect(jsonPath("$.totalElements").value(0))
+			.andExpect(jsonPath("$.page.totalElements").value(0))
 			.andExpect(jsonPath("$.content.length()").value(0))
 	}
 
