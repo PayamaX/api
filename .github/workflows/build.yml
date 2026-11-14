@@ -26,15 +26,15 @@ jobs:
       #       exit 1
       #     fi
 
-      # - name: Checkout Workspace scripts
-      #   uses: actions/checkout@v7
-      #   with:
-      #     repository: PayamaX/Workspace
-      #     ref: main
-      #     token: ${{ secrets.WORKSPACE_REPO_TOKEN }}
-      #     path: .payamax-workspace
-      #     persist-credentials: false
-      #     sparse-checkout: .github/scripts
+      - name: Checkout Workspace scripts
+        uses: actions/checkout@v7
+        with:
+          repository: PayamaX/Workspace
+          ref: main
+          token: ${{ secrets.WORKSPACE_REPO_TOKEN }}
+          path: .payamax-workspace
+          persist-credentials: false
+          sparse-checkout: .github/scripts
 
       - name: Resolve PAX_TAG
         run: |
