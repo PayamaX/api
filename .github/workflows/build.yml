@@ -12,29 +12,29 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 1
+      # - name: Checkout
+      #   uses: actions/checkout@v7
+      #   with:
+      #     fetch-depth: 1
 
-      - name: Check Workspace token
-        env:
-          WORKSPACE_REPO_TOKEN: ${{ secrets.WORKSPACE_REPO_TOKEN }}
-        run: |
-          if [ -z "${WORKSPACE_REPO_TOKEN}" ]; then
-            echo "::error::Repository secret WORKSPACE_REPO_TOKEN is missing. Create a fine-grained PAT with contents read on PayamaX/Workspace and store it as WORKSPACE_REPO_TOKEN."
-            exit 1
-          fi
+      # - name: Check Workspace token
+      #   env:
+      #     WORKSPACE_REPO_TOKEN: ${{ secrets.WORKSPACE_REPO_TOKEN }}
+      #   run: |
+      #     if [ -z "${WORKSPACE_REPO_TOKEN}" ]; then
+      #       echo "::error::Repository secret WORKSPACE_REPO_TOKEN is missing. Create a fine-grained PAT with contents read on PayamaX/Workspace and store it as WORKSPACE_REPO_TOKEN."
+      #       exit 1
+      #     fi
 
-      - name: Checkout Workspace scripts
-        uses: actions/checkout@v7
-        with:
-          repository: PayamaX/Workspace
-          ref: main
-          token: ${{ secrets.WORKSPACE_REPO_TOKEN }}
-          path: .payamax-workspace
-          persist-credentials: false
-          sparse-checkout: .github/scripts
+      # - name: Checkout Workspace scripts
+      #   uses: actions/checkout@v7
+      #   with:
+      #     repository: PayamaX/Workspace
+      #     ref: main
+      #     token: ${{ secrets.WORKSPACE_REPO_TOKEN }}
+      #     path: .payamax-workspace
+      #     persist-credentials: false
+      #     sparse-checkout: .github/scripts
 
       - name: Resolve PAX_TAG
         run: |
@@ -48,74 +48,74 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-        
-      - name: Load +env
-        run: |
-          cat +env >> $GITHUB_ENV
 
-      - name: Set up JDK
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: "25"
+      # - name: Load +env
+      #   run: |
+      #     cat +env >> $GITHUB_ENV
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
-        with:
-          cache-disabled: false
+      # - name: Set up JDK
+      #   uses: actions/setup-java@v6
+      #   with:
+      #     distribution: temurin
+      #     java-version: "25"
 
-      - name: Restore dependencies
-        run: bash ./gradlew dependencies
+      # - name: Setup Gradle
+      #   uses: gradle/actions/setup-gradle@v5
+      #   with:
+      #     cache-disabled: false
 
-      - name: Check
-        env:
-          PAX_TC_PULL_POLICY: always
-        run: bash ./gradlew check
+      # - name: Restore dependencies
+      #   run: bash ./gradlew dependencies
 
-      - name: Build
-        run: bash ./gradlew assemble -x test
+      # - name: Check
+      #   env:
+      #     PAX_TC_PULL_POLICY: always
+      #   run: bash ./gradlew check
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
+      # - name: Build
+      #   run: bash ./gradlew assemble -x test
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+      # - name: Set up QEMU
+      #   uses: docker/setup-qemu-action@v4
 
-      - name: Lowercase repository owner
-        run: |
-          echo "OWNER_LOWERCASE=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v4
 
-      - name: Create Root CA file
-        env:
-          ROOT_CA: ${{ secrets.ROOT_CA }}
-        run: |
-          mkdir -p assets/tls
-          echo "$ROOT_CA" > assets/tls/root-ca.pem
+      # - name: Lowercase repository owner
+      #   run: |
+      #     echo "OWNER_LOWERCASE=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      - name: Build and push images
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
+      # - name: Create Root CA file
+      #   env:
+      #     ROOT_CA: ${{ secrets.ROOT_CA }}
+      #   run: |
+      #     mkdir -p assets/tls
+      #     echo "$ROOT_CA" > assets/tls/root-ca.pem
 
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      # - name: Build and push images
+      #   uses: docker/build-push-action@v7
+      #   with:
+      #     context: .
+      #     file: ./Dockerfile
+      #     platforms: linux/amd64,linux/arm64
+      #     push: true
 
-          provenance: false
-          sbom: false
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max
 
-          build-args: |
-            BUILD_MODE=CI
-            PAX_JDK_VER=${{ env.PAX_JDK_VER }}
-            PAX_JRE_VER=${{ env.PAX_JRE_VER }}
-            PAX_GRD_VER=${{ env.PAX_GRD_VER }}
-            PAX_ADMIN_URL=https://admin.gymbo.ir
-            PAX_PG_PAX_DDL_FW_PWD=${{ env.PAX_PG_PAX_DDL_FW_PWD }}
+      #     provenance: false
+      #     sbom: false
 
-          tags: |
-            ghcr.io/${{ env.OWNER_LOWERCASE }}/${{ github.event.repository.name }}-dev:${{ env.PAX_TAG }}
+      #     build-args: |
+      #       BUILD_MODE=CI
+      #       PAX_JDK_VER=${{ env.PAX_JDK_VER }}
+      #       PAX_JRE_VER=${{ env.PAX_JRE_VER }}
+      #       PAX_GRD_VER=${{ env.PAX_GRD_VER }}
+      #       PAX_ADMIN_URL=https://admin.gymbo.ir
+      #       PAX_PG_PAX_DDL_FW_PWD=${{ env.PAX_PG_PAX_DDL_FW_PWD }}
+
+      #     tags: |
+      #       ghcr.io/${{ env.OWNER_LOWERCASE }}/${{ github.event.repository.name }}-dev:${{ env.PAX_TAG }}
 
       - name: Trigger Services rebuild
         uses: peter-evans/repository-dispatch@v4
