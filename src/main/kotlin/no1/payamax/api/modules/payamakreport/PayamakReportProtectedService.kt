@@ -18,6 +18,7 @@ import java.util.UUID
 
 @Service
 class PayamakReportProtectedService(
+	private val coreProvider: PayamakReportCoreContract,
 	private val repo: PayamakReportRepository,
 	private val ruleResultRepo: PayamakRuleProcessResultReportRepository,
 	private val entityTemplate: R2dbcEntityTemplate,
@@ -29,12 +30,7 @@ class PayamakReportProtectedService(
 		sorts.require(pageable, PayamakReportEntity::class.java)
 		val query = query(filter)
 		val total = entityTemplate.count(query, PayamakReportEntity::class.java).awaitSingle()
-		val page = entityTemplate
-			.select<PayamakReportEntity>()
-			.matching(query.with(pageable))
-			.flow()
-			.toPage(pageable, total)
-			.map { PayamakReportProtectedPortable.create(it) }
+		val page = entityTemplate.select<PayamakReportEntity>().matching(query.with(pageable)).flow().toPage(pageable, total).map { PayamakReportProtectedPortable.create(it) }
 		return PagedModel(page)
 	}
 
@@ -64,15 +60,32 @@ class PayamakReportProtectedService(
 	override suspend fun update(
 		globalId: UUID, input: PayamakReportPutProtectedInput
 	): PayamakReportProtectedPortable {
-		TODO("Not yet implemented")
+		val entity = repo.findByGlobalId(globalId) ?: throw EntityNotFoundException(PayamakReportEntity::class.java, globalId)
+		entity.reviewerComment = input.reviewerComment
+		entity.decidedDiagnostics = input.decidedDiagnostics
+		entity.state = PayamakReportStates.REVIEWED
+		repo.save(entity)
+		return PayamakReportProtectedPortable.create(entity)
 	}
 
 	override suspend fun flag(globalId: UUID, flagged: Boolean): PayamakReportProtectedPortable {
-		TODO("Not yet implemented")
+		val entity = repo.findByGlobalId(globalId) ?: throw EntityNotFoundException(PayamakReportEntity::class.java, globalId)
+		if (entity.flagged == flagged) {
+			return PayamakReportProtectedPortable.create(entity)
+		}
+		entity.flagged = flagged
+		repo.save(entity)
+		return PayamakReportProtectedPortable.create(entity)
 	}
 
 	override suspend fun postpone(globalId: UUID): PayamakReportProtectedPortable {
-		TODO("Not yet implemented")
+		val entity = repo.findByGlobalId(globalId) ?: throw EntityNotFoundException(PayamakReportEntity::class.java, globalId)
+		if (entity.state == PayamakReportStates.POSTPONED) {
+			return PayamakReportProtectedPortable.create(entity)
+		}
+		entity.state = PayamakReportStates.POSTPONED
+		repo.save(entity)
+		return PayamakReportProtectedPortable.create(entity)
 	}
 
 	private fun query(filter: PayamakReportProtectedFilter?): Query {

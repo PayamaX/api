@@ -40,7 +40,7 @@ class PayamakReportProtectedV1Controller(private val payamakReportProtectedProvi
 
 	@Operation(operationId = "putProtectedPayamakReport")
 	@PutMapping("/{globalId}")
-	suspend fun put(@PathVariable("globalId") globalId: UUID, input: PayamakReportPutProtectedInput): PayamakReportProtectedPortable = payamakReportProtectedProvider.update(globalId, input)
+	suspend fun put(@PathVariable("globalId") globalId: UUID, @RequestBody @Valid input: PayamakReportPutProtectedInput): PayamakReportProtectedPortable = payamakReportProtectedProvider.update(globalId, input)
 
 	@Operation(operationId = "patchProtectedPayamakReportFlag")
 	@PatchMapping("/{globalId}/flag")
