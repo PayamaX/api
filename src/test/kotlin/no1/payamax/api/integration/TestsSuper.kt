@@ -135,7 +135,8 @@ abstract class TestsSuper {
 			.withNetwork(network)
 			.withNetworkAliases("pgdb")
 			.waitingFor(
-				Wait.forLogMessage(".*Flyway completed\\..*", 1)
+				Wait
+					.forLogMessage(".*Flyway completed\\..*", 1)
 					.withStartupTimeout(Duration.ofMinutes(3)),
 			)
 
@@ -155,7 +156,8 @@ abstract class TestsSuper {
 			.withCreateContainerCmdModifier(BindHostPort(keycloakPort, 8080))
 			.dependsOn(postgres)
 			.waitingFor(
-				Wait.forHttp("/health/ready")
+				Wait
+					.forHttp("/health/ready")
 					.forPort(8080)
 					.forStatusCode(200)
 					.withStartupTimeout(Duration.ofMinutes(3)),
@@ -265,14 +267,17 @@ abstract class TestsSuper {
 					PullPolicy.defaultPolicy(),
 					"default. Testcontainers pulls an image when it is missing locally.",
 				)
+
 				"always" -> ImagePull(
 					PullPolicy.alwaysPull(),
 					"always. Testcontainers pulls an image even when a local copy exists.",
 				)
+
 				"never" -> ImagePull(
 					NeverPull,
 					"never. Testcontainers does not pull, so a missing image fails while creating the container.",
 				)
+
 				else -> throw IllegalArgumentException(
 					"PAX_TC_PULL_POLICY must be always, never, or default (got \"$configured\").",
 				)
