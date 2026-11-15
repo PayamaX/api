@@ -1,11 +1,9 @@
 package no1.payamax.api.modules.payamakreport
 
-import no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport.PayamakRuleProcessResultReportEntity
-import no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport.PayamakRuleProcessResultReportProtectedPortable
 import java.util.UUID
 
 class PayamakReportProtectedPortable(
-	val id: Long? = null,
+	val identifier: Long? = null,
 	val globalId: UUID,
 	val state: PayamakReportStates,
 	val origin: String,

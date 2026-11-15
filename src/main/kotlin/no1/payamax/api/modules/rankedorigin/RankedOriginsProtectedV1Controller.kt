@@ -11,7 +11,6 @@ import java.util.*
 
 @RequestMapping("/v1/protected/ranked-origins")
 @Secured(value = ["ROLE_ADMIN"])
-//@PreAuthorize("hasRole('ADMIN')")
 @RestController
 class RankedOriginsProtectedV1Controller(private val protectedProvider: RankedOriginProtectedContract) {
 

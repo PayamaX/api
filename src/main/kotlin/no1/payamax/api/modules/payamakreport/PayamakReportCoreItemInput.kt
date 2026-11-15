@@ -1,6 +1,6 @@
 package no1.payamax.api.modules.payamakreport
 
-import no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport.PayamakRuleProcessResultReportPublicInput
+import no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult.PayamakReportRuleProcessResultPublicInput
 import java.time.Instant
 import java.util.*
 
@@ -14,7 +14,7 @@ data class PayamakReportCoreItemInput(
 	val calcedRank: Float,
 	val detectedDiagnostics: PayamakReportDiagnostics,
 	val expectedDiagnostics: PayamakReportDiagnostics?,
-	val processorsReports: Array<PayamakRuleProcessResultReportPublicInput>,
+	val processorsReports: Array<PayamakReportRuleProcessResultPublicInput>,
 ) {
 	override fun equals(other: Any?): Boolean {
 		if (this === other) return true

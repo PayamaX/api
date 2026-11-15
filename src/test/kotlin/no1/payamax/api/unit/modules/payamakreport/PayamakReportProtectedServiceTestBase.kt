@@ -8,7 +8,7 @@ import no1.payamax.api.modules.payamakreport.PayamakReportEntity
 import no1.payamax.api.modules.payamakreport.PayamakReportProtectedService
 import no1.payamax.api.modules.payamakreport.PayamakReportRepository
 import no1.payamax.api.modules.payamakreport.PayamakReportStates
-import no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport.PayamakRuleProcessResultReportRepository
+import no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult.PayamakReportRuleProcessResultRepository
 import org.mockito.kotlin.any
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.mock
@@ -19,7 +19,7 @@ import java.util.UUID
 abstract class PayamakReportProtectedServiceTestBase {
 	protected val coreProvider: PayamakReportCoreContract = mock()
 	protected val repo: PayamakReportRepository = mock()
-	protected val ruleResultRepo: PayamakRuleProcessResultReportRepository = mock()
+	protected val ruleResultRepo: PayamakReportRuleProcessResultRepository = mock()
 	protected val entityTemplate: R2dbcEntityTemplate = mock()
 	protected val sorts: Sorts = mock()
 	protected val service = PayamakReportProtectedService(

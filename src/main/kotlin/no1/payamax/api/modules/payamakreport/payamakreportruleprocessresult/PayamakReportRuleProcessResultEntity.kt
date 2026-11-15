@@ -1,4 +1,4 @@
-package no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport
+package no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult
 
 import jakarta.persistence.Entity
 import jakarta.persistence.JoinColumn
@@ -11,11 +11,11 @@ import java.util.UUID
 import jakarta.persistence.Table as JpaTable
 
 @JpaTable(uniqueConstraints = [
-	UniqueConstraint(name = "uq__payamak_rule_process_result_report__global_id", columnNames = ["global_id"])
+	UniqueConstraint(name = "uq__payamak_report_rule_process_result__global_id", columnNames = ["global_id"])
 ])
 @Table
 @Entity
-class PayamakRuleProcessResultReportEntity (
+class PayamakReportRuleProcessResultEntity (
 	@jakarta.persistence.Id
 	@org.springframework.data.annotation.Id
 	override var id: Long?,

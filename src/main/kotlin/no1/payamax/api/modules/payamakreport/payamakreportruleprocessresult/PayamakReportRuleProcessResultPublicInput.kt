@@ -1,6 +1,6 @@
-package no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport
+package no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult
 
-data class PayamakRuleProcessResultReportPublicInput(
+data class PayamakReportRuleProcessResultPublicInput(
 	var processorName: String,
 	var processorVersion: String,
 	var generalRank: Float,

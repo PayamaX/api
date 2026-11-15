@@ -1,15 +1,15 @@
 package no1.payamax.api.modules.payamakreport
 
 import jakarta.transaction.Transactional
-import no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport.PayamakRuleProcessResultReportEntity
-import no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport.PayamakRuleProcessResultReportRepository
+import no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult.PayamakReportRuleProcessResultEntity
+import no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult.PayamakReportRuleProcessResultRepository
 import org.springframework.stereotype.Service
 import java.util.UUID
 
 @Service
 class PayamakReportCoreService(
 	private val repo: PayamakReportRepository,
-	private val ruleReportRepo: PayamakRuleProcessResultReportRepository,
+	private val ruleReportRepo: PayamakReportRuleProcessResultRepository,
 ) : PayamakReportCoreContract {
 
 	@Transactional
@@ -32,7 +32,7 @@ class PayamakReportCoreService(
 			)
 			val saved = repo.save(entity)
 			for (proc in item.processorsReports) {
-				val entity2 = PayamakRuleProcessResultReportEntity(
+				val entity2 = PayamakReportRuleProcessResultEntity(
 					null,
 					UUID.randomUUID(),
 					saved.id,

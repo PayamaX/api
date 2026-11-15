@@ -5,7 +5,7 @@ import no1.payamax.api.config.r2dbc.Sorts
 import no1.payamax.api.config.r2dbc.toPage
 import no1.payamax.api.exceptions.EntityNotFoundException
 import no1.payamax.api.exceptions.InvalidValueException
-import no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport.PayamakRuleProcessResultReportRepository
+import no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult.PayamakReportRuleProcessResultRepository
 import org.springframework.data.domain.Pageable
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.data.r2dbc.core.flow
@@ -20,7 +20,7 @@ import java.util.UUID
 class PayamakReportProtectedService(
 	private val coreProvider: PayamakReportCoreContract,
 	private val repo: PayamakReportRepository,
-	private val ruleResultRepo: PayamakRuleProcessResultReportRepository,
+	private val ruleResultRepo: PayamakReportRuleProcessResultRepository,
 	private val entityTemplate: R2dbcEntityTemplate,
 	private val sorts: Sorts,
 ) : PayamakReportProtectedContract {

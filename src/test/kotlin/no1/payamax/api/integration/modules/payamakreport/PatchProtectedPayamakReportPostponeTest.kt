@@ -10,7 +10,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.UUID
 import kotlin.test.assertEquals
 
-class PayamakReportProtectedV1PostponeTest : PayamakReportProtectedV1TestBase() {
+class PatchProtectedPayamakReportPostponeTest : PayamakReportProtectedV1TestBase() {
 	@Test
 	@WithMockUser(roles = ["ADMIN"])
 	fun `postpone marks a pending report postponed`() {

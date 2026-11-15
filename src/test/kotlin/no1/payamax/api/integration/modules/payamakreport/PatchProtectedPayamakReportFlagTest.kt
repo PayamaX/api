@@ -10,7 +10,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.UUID
 import kotlin.test.assertEquals
 
-class PayamakReportProtectedV1FlagTest : PayamakReportProtectedV1TestBase() {
+class PatchProtectedPayamakReportFlagTest : PayamakReportProtectedV1TestBase() {
 	@Test
 	@WithMockUser(roles = ["ADMIN"])
 	fun `flag marks a report`() {

@@ -4,7 +4,7 @@ import jakarta.validation.constraints.DecimalMax
 import jakarta.validation.constraints.DecimalMin
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
-import no1.payamax.api.modules.payamakreport.payamakruleprocessresultreport.PayamakRuleProcessResultReportPublicInput
+import no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult.PayamakReportRuleProcessResultPublicInput
 import org.hibernate.validator.constraints.Length
 import java.time.Instant
 import java.util.*
@@ -19,7 +19,7 @@ data class PayamakReportPublicItemInput(
 	@DecimalMin("0.0") @DecimalMax("1.0") val calcedRank: Float,
 	@NotNull val detectedDiagnostics: PayamakReportDiagnostics,
 	@NotNull val expectedDiagnostics: PayamakReportDiagnostics?,
-	@NotEmpty val processorsReports: Array<PayamakRuleProcessResultReportPublicInput>,
+	@NotEmpty val processorsReports: Array<PayamakReportRuleProcessResultPublicInput>,
 ) {
 	override fun equals(other: Any?): Boolean {
 		if (this === other) return true

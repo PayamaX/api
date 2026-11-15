@@ -30,8 +30,8 @@ abstract class RankedOriginsProtectedV1TestBase : TestsSuper() {
 	@field:Autowired
 	protected lateinit var databaseClient: DatabaseClient
 
-	protected fun getOrigin(globalId: UUID, token: String? = null): ResultActions {
-		var request = get("$ORIGINS/$globalId").accept(MediaType.APPLICATION_JSON)
+	protected fun getOrigin(identifier: String, token: String? = null): ResultActions {
+		var request = get("$ORIGINS/$identifier").accept(MediaType.APPLICATION_JSON)
 		if (token != null) {
 			request = request.header(HttpHeaders.AUTHORIZATION, "Bearer $token")
 		}

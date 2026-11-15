@@ -12,7 +12,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.UUID
 import kotlin.test.assertEquals
 
-class RankedOriginsProtectedV1PostTest : RankedOriginsProtectedV1TestBase() {
+class PostProtectedRankedOriginTest : RankedOriginsProtectedV1TestBase() {
 	@Test
 	@WithMockUser(roles = ["ADMIN"])
 	fun `post creates an origin`() {

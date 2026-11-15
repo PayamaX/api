@@ -11,7 +11,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.UUID
 import kotlin.test.assertEquals
 
-class PayamakReportProtectedV1PutTest : PayamakReportProtectedV1TestBase() {
+class PutProtectedPayamakReportTest : PayamakReportProtectedV1TestBase() {
 	@Test
 	@WithMockUser(roles = ["ADMIN"])
 	fun `put stores the decision and marks the report reviewed`() {

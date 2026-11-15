@@ -24,7 +24,7 @@ import kotlin.test.assertNotNull
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class PayamakReportPublicV1PostTest : TestsSuper() {
+class PostPublicPayamakReportTest : TestsSuper() {
 	@field:Autowired
 	private lateinit var mockMvc: MockMvc
 
@@ -116,7 +116,7 @@ class PayamakReportPublicV1PostTest : TestsSuper() {
 
 	private suspend fun assertNothingStored() {
 		assertEquals(0L, count("payamak_report"))
-		assertEquals(0L, count("payamak_rule_process_result_report"))
+		assertEquals(0L, count("payamak_report_rule_process_result"))
 	}
 
 	private suspend fun assertStored(origin: String, reporter: UUID) {
@@ -173,7 +173,7 @@ class PayamakReportPublicV1PostTest : TestsSuper() {
 			"""
 			SELECT report_id, processor_name, processor_version, general_rank, user_override_rank,
 			       processor_provided_comment, position
-			FROM payamak_rule_process_result_report
+			FROM payamak_report_rule_process_result
 			WHERE report_id = :reportId
 			ORDER BY position
 			""".trimIndent(),

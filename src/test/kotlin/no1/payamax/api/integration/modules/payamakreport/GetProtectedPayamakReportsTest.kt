@@ -24,7 +24,7 @@ import java.util.UUID
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class PayamakReportProtectedV1GetTest : TestsSuper() {
+class GetProtectedPayamakReportsTest : TestsSuper() {
 	@field:Autowired
 	private lateinit var mockMvc: MockMvc
 
