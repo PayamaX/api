@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PagedModel
+import org.springframework.http.ResponseEntity
 import org.springframework.security.access.annotation.Secured
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
@@ -18,7 +19,7 @@ class RankedOriginsProtectedV1Controller(private val protectedProvider: RankedOr
 	@GetMapping("/{identifier}")
 	suspend fun get(
 		@Parameter(description = "global id or origin") @PathVariable("identifier") identifier: String
-	): RankedOriginProtectedPortable = protectedProvider.get(identifier)
+	): ResponseEntity<RankedOriginProtectedPortable> = protectedProvider.get(identifier)?.let { return@let ResponseEntity.ok(it) } ?: ResponseEntity.noContent().build()
 
 	@Operation(operationId = "getProtectedRankedOrigins")
 	@GetMapping

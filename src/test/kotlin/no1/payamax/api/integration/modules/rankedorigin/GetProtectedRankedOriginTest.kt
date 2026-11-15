@@ -71,8 +71,8 @@ class GetProtectedRankedOriginTest : RankedOriginsProtectedV1TestBase() {
 
 		// Assert
 		response
-			.andExpect(status().isBadRequest)
-			.andExpect(content().string("""{"detail":"Entity not found","instance":"/v1/protected/ranked-origins/$missing","status":400,"title":"Bad Request"}"""))
+			.andExpect(status().isNoContent)
+			.andExpect(content().string(""))
 	}
 
 	@Test

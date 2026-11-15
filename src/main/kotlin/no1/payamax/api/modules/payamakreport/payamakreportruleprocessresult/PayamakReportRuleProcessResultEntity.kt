@@ -28,7 +28,7 @@ class PayamakReportRuleProcessResultEntity (
 	@ManyToOne
 	@JoinColumn(name = "report_id", referencedColumnName = "id")
 	@org.springframework.data.annotation.Transient
-	var payamakReport: PayamakReportEntity,
+	var payamakReport: PayamakReportEntity? = null,
 	var processorName: String,
 	var processorVersion: String,
 	var generalRank: Float,

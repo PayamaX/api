@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RequestMapping("/v1/public/payamak-report")
 @RestController
-class PayamakReportPublicV1Controller(private val payamakReportPublicProvider: PayamakReportPublicContract)
+class PayamakReportsPublicV1Controller(private val payamakReportPublicProvider: PayamakReportPublicContract)
 {
 	@Operation(operationId = "postPublicPayamakReport")
 	@PermitAll
