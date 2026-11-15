@@ -1,5 +1,6 @@
 package no1.payamax.api.modules.payamakreport
 
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactor.awaitSingle
 import no1.payamax.api.config.r2dbc.Sorts
 import no1.payamax.api.config.r2dbc.toPage
@@ -42,6 +43,8 @@ class PayamakReportProtectedService(
 
 	override suspend fun delete(globalId: UUID): PayamakReportProtectedPortable {
 		val entity = repo.findByGlobalId(globalId) ?: throw EntityNotFoundException(PayamakReportEntity::class.java, globalId)
+		val processorResults = ruleResultRepo.findAllByPayamakReportId(entity.id!!)
+		ruleResultRepo.deleteAll(processorResults)
 		repo.delete(entity)
 		return PayamakReportProtectedPortable.create(entity)
 	}
@@ -54,6 +57,8 @@ class PayamakReportProtectedService(
 		if (entities.isNotEmpty()) {
 			throw InvalidValueException("No entity found with ids ${globalIds.contentToString()}")
 		}
+		val processorResults = ruleResultRepo.findAllByPayamakReportIdIn(entities.map { it.id!! })
+		ruleResultRepo.deleteAll(processorResults)
 		repo.deleteAll(entities)
 	}
 

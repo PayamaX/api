@@ -25,7 +25,7 @@ class RankedOriginProtectedService(
 
 	override suspend fun paged(pageable: Pageable): PagedModel<RankedOriginProtectedPortable> {
 		sorts.require(pageable, RankedOriginEntity::class.java)
-		val page = repository.findBy(pageable).toPage(pageable, repository.count()).map { RankedOriginProtectedPortable.create(it) }
+		val page = repository.findByDeletedNull(pageable).toPage(pageable, repository.countByDeletedNull()).map { RankedOriginProtectedPortable.create(it) }
 		return PagedModel(page)
 	}
 

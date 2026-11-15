@@ -190,7 +190,7 @@ class GetProtectedPayamakReportRuleProcessResultsTest : PayamakReportProtectedV1
 		var spec = databaseClient.sql(
 			"""
 			INSERT INTO payamak_report_rule_process_result (
-				global_id, report_id, processor_name, processor_version, general_rank,
+				global_id, payamak_report_id, processor_name, processor_version, general_rank,
 				user_override_rank, processor_provided_comment, position
 			) VALUES (
 				:globalId, :reportId, :processorName, :processorVersion, :generalRank,

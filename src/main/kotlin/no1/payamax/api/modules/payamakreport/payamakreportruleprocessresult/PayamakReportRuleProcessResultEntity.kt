@@ -22,11 +22,11 @@ class PayamakReportRuleProcessResultEntity (
 	override var globalId: UUID,
 
 	@jakarta.persistence.Transient
-	@org.springframework.data.relational.core.mapping.Column("report_id")
-	var reportId: Long?,
+	@org.springframework.data.relational.core.mapping.Column("payamak_report_id")
+	var payamakReportId: Long?,
 
 	@ManyToOne
-	@JoinColumn(name = "report_id", referencedColumnName = "id")
+	@JoinColumn(name = "payamak_report_id", referencedColumnName = "id")
 	@org.springframework.data.annotation.Transient
 	var payamakReport: PayamakReportEntity? = null,
 	var processorName: String,

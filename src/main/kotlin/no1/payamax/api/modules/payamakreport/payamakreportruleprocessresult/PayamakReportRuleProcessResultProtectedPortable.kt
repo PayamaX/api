@@ -17,7 +17,7 @@ data class PayamakReportRuleProcessResultProtectedPortable(
 		fun create(entity: PayamakReportRuleProcessResultEntity): PayamakReportRuleProcessResultProtectedPortable = PayamakReportRuleProcessResultProtectedPortable(
 			entity.id,
 			entity.globalId,
-			entity.reportId,
+			entity.payamakReportId,
 			entity.processorName,
 			entity.processorVersion,
 			entity.generalRank,

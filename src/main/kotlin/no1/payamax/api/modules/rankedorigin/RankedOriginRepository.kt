@@ -9,7 +9,8 @@ import java.time.Instant
 
 @Repository
 interface RankedOriginRepository : CoroutineCrudRepository<RankedOriginEntity, Long> {
-	suspend fun findBy(pageable: Pageable): Flow<RankedOriginEntity>
+	suspend fun findByDeletedNull(pageable: Pageable): Flow<RankedOriginEntity>
+	suspend fun countByDeletedNull(): Long
 	suspend fun findOneByOrigin(origin: String): RankedOriginEntity?
 	suspend fun findOneByGlobalId(globalId: UUID): RankedOriginEntity?
 	suspend fun findAllByGlobalIdIn(globalIds: Array<UUID>): List<RankedOriginEntity>

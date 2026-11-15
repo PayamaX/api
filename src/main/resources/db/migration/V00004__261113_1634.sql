@@ -15,7 +15,7 @@ create table payamak_report_rule_process_result
 	processor_provided_comment varchar(255),
 	processor_version          varchar(255),
 	user_override_rank         float4,
-	report_id                  bigint,
+	payamak_report_id                  bigint,
 	primary key (id)
 );
 create index ix__payamak_report__state on payamak_report (state);
@@ -27,7 +27,7 @@ alter table if exists payamak_report_rule_process_result drop constraint if exis
 alter table if exists payamak_report_rule_process_result add constraint uq__payamak_report_rule_process_result__global_id unique (global_id);
 alter table if exists ranked_origin drop constraint if exists uq__ranked_origin__origin;
 alter table if exists ranked_origin add constraint uq__ranked_origin__origin unique (origin);
-alter table if exists payamak_report_rule_process_result add constraint fk__payamak_report_rule_process_result__report_id foreign key (report_id) references payamak_report;
+alter table if exists payamak_report_rule_process_result add constraint fk__payamak_report_rule_process_result__payamak_report_id foreign key (payamak_report_id) references payamak_report;
 do
 $$
 begin

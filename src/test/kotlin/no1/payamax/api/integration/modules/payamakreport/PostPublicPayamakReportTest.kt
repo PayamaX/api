@@ -171,17 +171,17 @@ class PostPublicPayamakReportTest : TestsSuper() {
 	private suspend fun storedResults(reportId: Long): List<StoredResult> {
 		return databaseClient.sql(
 			"""
-			SELECT report_id, processor_name, processor_version, general_rank, user_override_rank,
+			SELECT payamak_report_id, processor_name, processor_version, general_rank, user_override_rank,
 			       processor_provided_comment, position
 			FROM payamak_report_rule_process_result
-			WHERE report_id = :reportId
+			WHERE payamak_report_id = :reportId
 			ORDER BY position
 			""".trimIndent(),
 		)
 			.bind("reportId", reportId)
 			.map { row, _ ->
 				StoredResult(
-					reportId = (row.get("report_id") as Number).toLong(),
+					reportId = (row.get("payamak_report_id") as Number).toLong(),
 					processorName = row.get("processor_name", String::class.java)!!,
 					processorVersion = row.get("processor_version", String::class.java)!!,
 					generalRank = (row.get("general_rank") as Number).toFloat(),

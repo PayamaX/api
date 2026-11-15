@@ -5,5 +5,6 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface PayamakReportRuleProcessResultRepository : CoroutineCrudRepository<PayamakReportRuleProcessResultEntity, Long> {
-	suspend fun findAllByReportId(reportId: Long): List<PayamakReportRuleProcessResultEntity>
+	suspend fun findAllByPayamakReportId(payamakReportId: Long): List<PayamakReportRuleProcessResultEntity>
+	suspend fun findAllByPayamakReportIdIn(payamakReportIds: List<Long>): List<PayamakReportRuleProcessResultEntity>
 }
