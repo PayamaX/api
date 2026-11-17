@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class PayamakReportPublicService(private val payamakReportCoreProvider: PayamakReportCoreContract) : PayamakReportPublicContract {
-	override suspend fun persist(input: PayamakReportPublicInput) {
+	override suspend fun persist(input: PayamakReportsPublicInput) {
 		payamakReportCoreProvider.persist(input.core())
 	}
 }

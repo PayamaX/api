@@ -147,7 +147,7 @@ class GetProtectedPayamakReportRuleProcessResultsTest : PayamakReportProtectedV1
 		results.forEach { result ->
 			val match = "$[?(@.globalId == '${result.globalId}')]"
 			checks = checks
-				.andExpect(jsonPath("$match.id", contains(result.id.toInt())))
+				.andExpect(jsonPath("$match.identifier", contains(result.id.toInt())))
 				.andExpect(jsonPath("$match.reportId", contains(result.reportId.toInt())))
 				.andExpect(jsonPath("$match.processorName", contains(result.processorName)))
 				.andExpect(jsonPath("$match.processorVersion", contains(result.processorVersion)))

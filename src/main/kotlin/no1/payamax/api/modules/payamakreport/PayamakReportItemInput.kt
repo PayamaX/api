@@ -4,7 +4,7 @@ import no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult.Paya
 import java.time.Instant
 import java.util.*
 
-data class PayamakReportCoreItemInput(
+data class PayamakReportItemInput(
 	val origin: String,
 	val body: String?,
 	val sha512: String?,
@@ -20,7 +20,7 @@ data class PayamakReportCoreItemInput(
 		if (this === other) return true
 		if (javaClass != other?.javaClass) return false
 
-		other as PayamakReportCoreItemInput
+		other as PayamakReportItemInput
 
 		if (calcedRank != other.calcedRank) return false
 		if (origin != other.origin) return false
@@ -51,7 +51,7 @@ data class PayamakReportCoreItemInput(
 	}
 
 	companion object {
-		fun core(item: PayamakReportPublicItemInput): PayamakReportCoreItemInput = PayamakReportCoreItemInput(
+		fun core(item: PayamakReportPublicInput): PayamakReportItemInput = PayamakReportItemInput(
 			item.origin,
 			item.body,
 			item.sha512,

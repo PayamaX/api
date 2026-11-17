@@ -11,7 +11,7 @@ class PayamakReportRuleProcessResultProtectedService(
 	private val payamakReportRepository: PayamakReportRepository,
 	private val payamakReportRuleProcessResultRepository: PayamakReportRuleProcessResultRepository,
 ) : PayamakReportRuleProcessResultProtectedContract {
-	override suspend fun getByPayamakReportId(payamakReportGlobalId: UUID): List<PayamakReportRuleProcessResultProtectedPortable> {
+	override suspend fun getByPayamakReportGlobalId(payamakReportGlobalId: UUID): List<PayamakReportRuleProcessResultProtectedPortable> {
 		val payamakReport = payamakReportRepository.findByGlobalId(payamakReportGlobalId) ?: throw EntityNotFoundException(PayamakReportEntity::class.java, payamakReportGlobalId)
 		val list = payamakReportRuleProcessResultRepository.findAllByPayamakReportId(payamakReport.id!!)
 		return list.map { PayamakReportRuleProcessResultProtectedPortable.create(it) }

@@ -16,6 +16,6 @@ class PayamakReportsPublicV1Controller(private val payamakReportPublicProvider: 
 	@PermitAll
 	@PostMapping
 	suspend fun post(
-		@RequestBody @Valid input: PayamakReportPublicInput,
+        @RequestBody @Valid input: PayamakReportsPublicInput,
 	): Unit = payamakReportPublicProvider.persist(input);
 }

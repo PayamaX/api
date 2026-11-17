@@ -3,7 +3,7 @@ package no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult
 import java.util.UUID
 
 data class PayamakReportRuleProcessResultProtectedPortable(
-	val id: Long?,
+	val identifier: Long?,
 	val globalId: UUID,
 	val reportId: Long?,
 	val processorName: String,
