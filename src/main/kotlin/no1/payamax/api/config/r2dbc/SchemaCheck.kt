@@ -11,6 +11,9 @@ import org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder
 import org.hibernate.boot.spi.MetadataImplementor
 import org.hibernate.cfg.AvailableSettings
+import org.hibernate.dialect.PostgreSQLDialect
+import org.hibernate.dialect.sequence.PostgreSQLSequenceSupport
+import org.hibernate.dialect.sequence.SequenceSupport
 import org.hibernate.dialect.temptable.TemporaryTableColumn
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment
 import org.hibernate.mapping.Column
@@ -49,7 +52,7 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 			AvailableSettings.JAKARTA_JDBC_URL to environment.getRequiredProperty("spring.datasource.url"),
 			AvailableSettings.JAKARTA_JDBC_USER to environment.getRequiredProperty("spring.datasource.username"),
 			AvailableSettings.JAKARTA_JDBC_PASSWORD to environment.getRequiredProperty("spring.datasource.password"),
-			AvailableSettings.DIALECT to "org.hibernate.dialect.PostgreSQLDialect",
+			AvailableSettings.DIALECT to SchemaCheckDialect::class.java.name,
 			AvailableSettings.JAKARTA_HBM2DDL_DATABASE_ACTION to databaseAction,
 			AvailableSettings.JAKARTA_HBM2DDL_SCRIPTS_ACTION to scriptsAction,
 			AvailableSettings.HBM2DDL_HALT_ON_ERROR to "true",
@@ -451,7 +454,7 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 	}
 
 	private fun dropIndex(index: DatabaseIndex): String =
-		"drop index if exists ${quote(index.schema)}.${quote(index.name)};"
+		"drop index ${quote(index.schema)}.${quote(index.name)};"
 
 	private fun appendIndexChanges(scratch: File, changes: List<IndexChange>) {
 		val script = changes.flatMap { it.statements }.filter { it.isNotBlank() }.joinToString("\n")
@@ -610,6 +613,32 @@ internal fun databaseNullable(entity: Class<*>, propertyName: String): Boolean {
 		"Schema check found ${marked.size} nullability declarations for [${entity.simpleName}.$propertyName]"
 	}
 	return marked.single()
+}
+
+internal class SchemaCheckDialect : PostgreSQLDialect() {
+	private val sequences: SequenceSupport = object : SequenceSupport by PostgreSQLSequenceSupport.INSTANCE {
+		override fun getDropSequenceString(sequenceName: String): String = "drop sequence $sequenceName"
+	}
+
+	override fun getSequenceSupport(): SequenceSupport = sequences
+
+	override fun supportsIfExistsBeforeTableName(): Boolean = false
+
+	override fun supportsIfExistsAfterTableName(): Boolean = false
+
+	override fun supportsIfExistsBeforeTypeName(): Boolean = false
+
+	override fun supportsIfExistsAfterTypeName(): Boolean = false
+
+	override fun supportsIfExistsBeforeConstraintName(): Boolean = false
+
+	override fun supportsIfExistsAfterConstraintName(): Boolean = false
+
+	override fun supportsIfExistsAfterAlterTable(): Boolean = false
+
+	override fun supportsIfExistsBeforeIndexName(): Boolean = false
+
+	override fun getDropEnumTypeCommand(name: String): Array<String> = arrayOf("drop type $name cascade")
 }
 
 internal class EntityFieldColumnOrderingStrategy : ColumnOrderingStrategy {

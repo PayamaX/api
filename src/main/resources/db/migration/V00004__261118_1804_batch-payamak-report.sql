@@ -1,13 +1,23 @@
-alter table if exists payamak_report add column state varchar (255) not null check ((state in ('PENDING','REVIEWED','POSTPONED')));
-alter table if exists payamak_report alter column origin set data type varchar (16);
-alter table if exists payamak_report alter column body set data type varchar (4096);
-alter table if exists payamak_report add column sha512 varchar (88);
-alter table if exists payamak_report add column reporter_user_global_id uuid;
-alter table if exists payamak_report alter column reporter_comment set data type varchar (4096);
-alter table if exists payamak_report add column reviewer_comment varchar (4096);
-alter table if exists payamak_report add column flagged boolean not null;
-alter table if exists payamak_report add column detected_diagnostics varchar (255) not null check ((detected_diagnostics in ('Important','Useful','Spam')));
-alter table if exists payamak_report add column expected_diagnostics varchar (255) check ((expected_diagnostics in ('Important','Useful','Spam')));
+alter table payamak_report
+	add column state varchar(255) not null check ((state in ('PENDING', 'REVIEWED', 'POSTPONED')));
+alter table payamak_report
+	alter column origin set data type varchar(16);
+alter table payamak_report
+	alter column body set data type varchar(4096);
+alter table payamak_report
+	add column sha512 varchar(88);
+alter table payamak_report
+	add column reporter_user_global_id uuid;
+alter table payamak_report
+	alter column reporter_comment set data type varchar(4096);
+alter table payamak_report
+	add column reviewer_comment varchar(4096);
+alter table payamak_report
+	add column flagged boolean not null;
+alter table payamak_report
+	add column detected_diagnostics varchar(255) not null check ((detected_diagnostics in ('Important', 'Useful', 'Spam')));
+alter table payamak_report
+	add column expected_diagnostics varchar(255) check ((expected_diagnostics in ('Important', 'Useful', 'Spam')));
 create table payamak_report_rule_process_result
 (
 	id                         bigint default nextval('id') not null,
@@ -21,19 +31,25 @@ create table payamak_report_rule_process_result
 	position                   integer                      not null,
 	primary key (id)
 );
-alter table if exists ranked_origin alter column origin set data type varchar (16);
-alter table if exists ranked_origin alter column comment set data type varchar (512);
+alter table ranked_origin
+	alter column origin set data type varchar(16);
+alter table ranked_origin
+	alter column comment set data type varchar(512);
 create index ix__payamak_report__state on payamak_report (state);
 create index ix__payamak_report__origin on payamak_report (origin);
 create index ix__payamak_report__flagged on payamak_report (flagged);
-alter table if exists payamak_report drop constraint if exists uq__payamak_report__global_id;
-alter table if exists payamak_report add constraint uq__payamak_report__global_id unique (global_id);
+alter table payamak_report drop constraint uq__payamak_report__global_id;
+alter table payamak_report
+	add constraint uq__payamak_report__global_id unique (global_id);
 create index ix__payamak_report_rule_process_result__payamak_report_id on payamak_report_rule_process_result (payamak_report_id);
-alter table if exists payamak_report_rule_process_result drop constraint if exists uq__payamak_report_rule_process_result__global_id;
-alter table if exists payamak_report_rule_process_result add constraint uq__payamak_report_rule_process_result__global_id unique (global_id);
-alter table if exists ranked_origin drop constraint if exists uq__ranked_origin__origin;
-alter table if exists ranked_origin add constraint uq__ranked_origin__origin unique (origin);
-alter table if exists payamak_report_rule_process_result add constraint fk__payamak_report_rule_process_result__payamak_report_id foreign key (payamak_report_id) references payamak_report;
+alter table payamak_report_rule_process_result drop constraint uq__payamak_report_rule_process_result__global_id;
+alter table payamak_report_rule_process_result
+	add constraint uq__payamak_report_rule_process_result__global_id unique (global_id);
+alter table ranked_origin drop constraint uq__ranked_origin__origin;
+alter table ranked_origin
+	add constraint uq__ranked_origin__origin unique (origin);
+alter table payamak_report_rule_process_result
+	add constraint fk__payamak_report_rule_process_result__payamak_report_id foreign key (payamak_report_id) references payamak_report;
 do
 $$
 begin
