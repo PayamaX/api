@@ -15,7 +15,7 @@ create table payamak_report_rule_process_result
 	processor_provided_comment varchar(255),
 	processor_version          varchar(255),
 	user_override_rank         float4,
-	payamak_report_id                  bigint,
+	payamak_report_id          bigint,
 	primary key (id)
 );
 create index ix__payamak_report__state on payamak_report (state);
@@ -23,6 +23,7 @@ create index ix__payamak_report__origin on payamak_report (origin);
 create index ix__payamak_report__flagged on payamak_report (flagged);
 alter table if exists payamak_report drop constraint if exists uq__payamak_report__global_id;
 alter table if exists payamak_report add constraint uq__payamak_report__global_id unique (global_id);
+create index ix__payamak_report_rule_process_result__payamak_report_id on payamak_report_rule_process_result (payamak_report_id);
 alter table if exists payamak_report_rule_process_result drop constraint if exists uq__payamak_report_rule_process_result__global_id;
 alter table if exists payamak_report_rule_process_result add constraint uq__payamak_report_rule_process_result__global_id unique (global_id);
 alter table if exists ranked_origin drop constraint if exists uq__ranked_origin__origin;
@@ -68,4 +69,9 @@ end if;
 alter table "public"."payamak_report" drop column "reporter";
 end
 $$;
-create index ix__payamak_report_rule_process_result__payamak_report_id on payamak_report_rule_process_result (payamak_report_id);
+alter table "public"."ranked_origin"
+	alter column "global_id" drop not null;
+alter table "public"."ranked_origin"
+	alter column "origin" drop not null;
+alter table "public"."ranked_origin"
+	alter column "updated" drop not null;

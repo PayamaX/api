@@ -35,6 +35,6 @@ class PayamakReportRuleProcessResultEntity (
 	var processorVersion: String,
 	var generalRank: Float,
 	var userOverrideRank: Float?,
-	var processorProvidedComment: String,
+	var processorProvidedComment: String?,
 	var position: Int,
 ): Sequenced

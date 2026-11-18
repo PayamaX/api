@@ -2,7 +2,6 @@ package no1.payamax.api.unit.modules.payamakreport
 
 import kotlinx.coroutines.runBlocking
 import no1.payamax.api.config.r2dbc.Sorts
-import no1.payamax.api.modules.payamakreport.PayamakReportCoreContract
 import no1.payamax.api.modules.payamakreport.PayamakReportDiagnostics
 import no1.payamax.api.modules.payamakreport.PayamakReportEntity
 import no1.payamax.api.modules.payamakreport.PayamakReportProtectedService
@@ -17,13 +16,11 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import java.util.UUID
 
 abstract class PayamakReportProtectedServiceTestBase {
-	protected val coreProvider: PayamakReportCoreContract = mock()
 	protected val repo: PayamakReportRepository = mock()
 	protected val ruleResultRepo: PayamakReportRuleProcessResultRepository = mock()
 	protected val entityTemplate: R2dbcEntityTemplate = mock()
 	protected val sorts: Sorts = mock()
 	protected val service = PayamakReportProtectedService(
-		coreProvider = coreProvider,
 		repo = repo,
 		ruleResultRepo = ruleResultRepo,
 		entityTemplate = entityTemplate,

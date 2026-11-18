@@ -19,7 +19,6 @@ import java.util.UUID
 
 @Service
 class PayamakReportProtectedService(
-	private val coreProvider: PayamakReportCoreContract,
 	private val repo: PayamakReportRepository,
 	private val ruleResultRepo: PayamakReportRuleProcessResultRepository,
 	private val entityTemplate: R2dbcEntityTemplate,
@@ -60,7 +59,9 @@ class PayamakReportProtectedService(
 			throw InvalidValueException("No entity found with ids ${globalIds.contentToString()}")
 		}
 		val processorResults = ruleResultRepo.findAllByPayamakReportIdIn(entities.map { it.id!! })
-		ruleResultRepo.deleteAll(processorResults)
+		if(processorResults.isNotEmpty()) {
+			ruleResultRepo.deleteAll(processorResults)
+		}
 		repo.deleteAll(entities)
 	}
 

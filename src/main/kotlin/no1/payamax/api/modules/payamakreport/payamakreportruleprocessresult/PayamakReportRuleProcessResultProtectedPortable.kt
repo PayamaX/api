@@ -10,7 +10,7 @@ data class PayamakReportRuleProcessResultProtectedPortable(
 	val processorVersion: String,
 	val generalRank: Float,
 	val userOverrideRank: Float?,
-	val processorProvidedComment: String,
+	val processorProvidedComment: String?,
 	val position: Int,
 ) {
 	companion object {

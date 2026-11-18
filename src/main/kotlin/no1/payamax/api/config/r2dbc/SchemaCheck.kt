@@ -74,11 +74,16 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 			}
 			val unmapped = unmappedColumns(metadata)
 			appendUnmappedColumns(scratch, unmapped)
+			// Hibernate's update script adds columns and changes their type, but it never
+			// alters nullability, so a nullable mismatch is neither scripted nor rejected.
+			val nullability = nullabilityChanges(metadata)
+			appendNullabilityChanges(scratch, nullability)
 			val indexes = indexChanges(metadata, scratch, validationFailed = mismatch != null)
 			appendIndexChanges(scratch, indexes)
 			val messages = buildList {
 				mismatch?.message?.let { add(it) }
 				if (unmapped.isNotEmpty()) add(unmappedMessage(unmapped))
+				if (nullability.isNotEmpty()) add(nullabilityMessage(nullability))
 				if (indexes.isNotEmpty()) add(indexMessage(indexes))
 			}
 			if (messages.isNotEmpty()) {
@@ -168,6 +173,113 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 		val existing = scratch.readText()
 		val separator = if (existing.isEmpty() || existing.endsWith("\n")) "" else "\n"
 		scratch.appendText(separator + script + "\n")
+	}
+
+	private fun nullabilityChanges(metadata: Metadata): List<NullabilityChange> {
+		val mapped = mappedColumns(metadata)
+		if (mapped.isEmpty()) return emptyList()
+		DriverManager.getConnection(
+			environment.getRequiredProperty("spring.datasource.url"),
+			environment.getRequiredProperty("spring.datasource.username"),
+			environment.getRequiredProperty("spring.datasource.password"),
+		).use { connection ->
+			val actual = databaseNullability(connection, mapped.values)
+			val changes = mutableListOf<NullabilityChange>()
+			for (column in mapped.values) {
+				val nullable = actual[ColumnKey(column.schema, column.table, column.column)] ?: continue
+				if (nullable == column.nullable) continue
+				val hasNull = !column.nullable && columnHasNull(connection, column.schema, column.table, column.column)
+				changes += NullabilityChange(
+					column.schema,
+					column.table,
+					column.column,
+					column.nullable,
+					hasNull,
+					if (column.nullable) dropNotNull(column) else setNotNull(column),
+				)
+			}
+			return changes.sortedWith(compareBy({ it.schema }, { it.table }, { it.column }))
+		}
+	}
+
+	private fun mappedColumns(metadata: Metadata): Map<ColumnKey, MappedColumn> {
+		val columns = linkedMapOf<ColumnKey, MappedColumn>()
+		for (namespace in metadata.database.namespaces) {
+			for (table in namespace.tables) {
+				if (!table.isPhysicalTable) continue
+				val schema = table.schema?.trim('"')?.takeIf { it.isNotEmpty() } ?: "public"
+				val tableName = table.name.trim('"').lowercase()
+				for (column in table.columns) {
+					val name = column.canonicalName.trim('"')
+					val mapped = MappedColumn(schema, tableName, name, column.isNullable)
+					columns[ColumnKey(schema, tableName, name)] = mapped
+				}
+			}
+		}
+		return columns
+	}
+
+	private fun databaseNullability(connection: Connection, columns: Collection<MappedColumn>): Map<ColumnKey, Boolean> {
+		val found = linkedMapOf<ColumnKey, Boolean>()
+		connection.prepareStatement(
+			"""
+			select table_schema, table_name, column_name, is_nullable
+			from information_schema.columns
+			where table_schema = any (?) and table_name = any (?)
+			""".trimIndent(),
+		).use { statement ->
+			statement.setArray(1, connection.createArrayOf("text", columns.map { it.schema }.distinct().toTypedArray()))
+			statement.setArray(2, connection.createArrayOf("text", columns.map { it.table }.distinct().toTypedArray()))
+			statement.executeQuery().use { rows ->
+				while (rows.next()) {
+					found[ColumnKey(rows.getString(1), rows.getString(2), rows.getString(3))] =
+						rows.getString(4).equals("YES", ignoreCase = true)
+				}
+			}
+		}
+		return found
+	}
+
+	private fun columnHasNull(connection: Connection, schema: String, table: String, column: String): Boolean {
+		val sql = "select exists (select 1 from ${quote(schema)}.${quote(table)} where ${quote(column)} is null)"
+		connection.createStatement().use { statement ->
+			statement.executeQuery(sql).use { rows ->
+				rows.next()
+				return rows.getBoolean(1)
+			}
+		}
+	}
+
+	private fun setNotNull(column: MappedColumn): String =
+		"""
+		do $$
+		begin
+			if exists (select 1 from ${quote(column.schema)}.${quote(column.table)} where ${quote(column.column)} is null) then
+				raise exception 'column ${column.table}.${column.column} has a null value';
+			end if;
+			alter table ${quote(column.schema)}.${quote(column.table)} alter column ${quote(column.column)} set not null;
+		end
+		$$;
+		""".trimIndent()
+
+	private fun dropNotNull(column: MappedColumn): String =
+		"alter table ${quote(column.schema)}.${quote(column.table)} alter column ${quote(column.column)} drop not null;"
+
+	private fun appendNullabilityChanges(scratch: File, changes: List<NullabilityChange>) {
+		val script = changes.joinToString("\n") { it.statement }
+		if (script.isBlank()) return
+		val existing = scratch.readText()
+		val separator = if (existing.isEmpty() || existing.endsWith("\n")) "" else "\n"
+		scratch.appendText(separator + script + "\n")
+	}
+
+	private fun nullabilityMessage(changes: List<NullabilityChange>): String = changes.joinToString("\n") { change ->
+		if (change.nullable) {
+			"Schema validation: column [${change.column}] in table [${change.table}] is not null and the model declares it nullable"
+		} else {
+			val state = if (change.hasNull) "has a null value" else "is not null for every row"
+			"Schema validation: column [${change.column}] in table [${change.table}] is nullable and $state, and the model declares it not null"
+		}
 	}
 
 	private fun indexChanges(metadata: Metadata, scratch: File, validationFailed: Boolean): List<IndexChange> {
@@ -378,6 +490,19 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 	private data class MappedTable(val schema: String, val table: String, val columns: Set<String>)
 
 	private data class UnmappedColumn(val schema: String, val table: String, val column: String, val hasValue: Boolean)
+
+	private data class ColumnKey(val schema: String, val table: String, val column: String)
+
+	private data class MappedColumn(val schema: String, val table: String, val column: String, val nullable: Boolean)
+
+	private data class NullabilityChange(
+		val schema: String,
+		val table: String,
+		val column: String,
+		val nullable: Boolean,
+		val hasNull: Boolean,
+		val statement: String,
+	)
 
 	private data class IndexKey(val schema: String, val table: String, val name: String)
 
