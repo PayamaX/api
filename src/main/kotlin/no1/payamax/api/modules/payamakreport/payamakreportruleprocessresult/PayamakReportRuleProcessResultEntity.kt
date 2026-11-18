@@ -1,5 +1,6 @@
 package no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
@@ -7,6 +8,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.UniqueConstraint
 import no1.payamax.api.config.r2dbc.Sequenced
 import no1.payamax.api.modules.payamakreport.PayamakReportEntity
+import org.hibernate.annotations.ColumnDefault
 import org.springframework.data.relational.core.mapping.Table
 import java.util.UUID
 import jakarta.persistence.Table as JpaTable
@@ -20,6 +22,7 @@ import jakarta.persistence.Table as JpaTable
 class PayamakReportRuleProcessResultEntity (
 	@jakarta.persistence.Id
 	@org.springframework.data.annotation.Id
+	@ColumnDefault("nextval('id')")
 	override var id: Long?,
 	override var globalId: UUID,
 
@@ -31,10 +34,15 @@ class PayamakReportRuleProcessResultEntity (
 	@JoinColumn(name = "payamak_report_id", referencedColumnName = "id")
 	@org.springframework.data.annotation.Transient
 	var payamakReport: PayamakReportEntity? = null,
+
+	@Column(length = 32)
 	var processorName: String,
-	var processorVersion: String,
+
+	var processorVersion: Int,
 	var generalRank: Float,
 	var userOverrideRank: Float?,
+
+	@Column(length = 4096)
 	var processorProvidedComment: String?,
 	var position: Int,
 ): Sequenced

@@ -1,23 +1,28 @@
-alter table if exists payamak_report add column detected_diagnostics varchar (255) check ((detected_diagnostics in ('Important','Useful','Spam')));
-alter table if exists payamak_report add column expected_diagnostics varchar (255) check ((expected_diagnostics in ('Important','Useful','Spam')));
-alter table if exists payamak_report add column flagged boolean not null;
+alter table if exists payamak_report add column state varchar (255) not null check ((state in ('PENDING','REVIEWED','POSTPONED')));
+alter table if exists payamak_report alter column origin set data type varchar (16);
+alter table if exists payamak_report alter column body set data type varchar (4096);
+alter table if exists payamak_report add column sha512 varchar (88);
 alter table if exists payamak_report add column reporter_user_global_id uuid;
-alter table if exists payamak_report add column reviewer_comment varchar (255);
-alter table if exists payamak_report add column sha512 varchar (255);
-alter table if exists payamak_report add column state varchar (255) check ((state in ('PENDING','REVIEWED','POSTPONED')));
+alter table if exists payamak_report alter column reporter_comment set data type varchar (4096);
+alter table if exists payamak_report add column reviewer_comment varchar (4096);
+alter table if exists payamak_report add column flagged boolean not null;
+alter table if exists payamak_report add column detected_diagnostics varchar (255) not null check ((detected_diagnostics in ('Important','Useful','Spam')));
+alter table if exists payamak_report add column expected_diagnostics varchar (255) check ((expected_diagnostics in ('Important','Useful','Spam')));
 create table payamak_report_rule_process_result
 (
-	id                         bigint  not null default nextval('id'),
-	general_rank               float4  not null,
-	global_id                  uuid,
-	position                   integer not null,
-	processor_name             varchar(255),
-	processor_provided_comment varchar(255),
-	processor_version          varchar(255),
-	user_override_rank         float4,
+	id                         bigint default nextval('id') not null,
+	global_id                  uuid                         not null,
 	payamak_report_id          bigint,
+	processor_name             varchar(32)                  not null,
+	processor_version          integer                      not null,
+	general_rank               float4                       not null,
+	user_override_rank         float4,
+	processor_provided_comment varchar(4096),
+	position                   integer                      not null,
 	primary key (id)
 );
+alter table if exists ranked_origin alter column origin set data type varchar (16);
+alter table if exists ranked_origin alter column comment set data type varchar (512);
 create index ix__payamak_report__state on payamak_report (state);
 create index ix__payamak_report__origin on payamak_report (origin);
 create index ix__payamak_report__flagged on payamak_report (flagged);
@@ -69,9 +74,25 @@ end if;
 alter table "public"."payamak_report" drop column "reporter";
 end
 $$;
-alter table "public"."ranked_origin"
-	alter column "global_id" drop not null;
-alter table "public"."ranked_origin"
-	alter column "origin" drop not null;
-alter table "public"."ranked_origin"
-	alter column "updated" drop not null;
+do
+$$
+begin
+	if
+exists (select 1 from "public"."payamak_report" where "global_id" is null) then
+		raise exception 'column payamak_report.global_id has a null value';
+end if;
+alter table "public"."payamak_report"
+	alter column "global_id" set not null;
+end
+$$;
+do
+$$
+begin
+	if
+exists (select 1 from "public"."payamak_report" where "origin" is null) then
+		raise exception 'column payamak_report.origin has a null value';
+end if;
+alter table "public"."payamak_report"
+	alter column "origin" set not null;
+end
+$$;

@@ -3,13 +3,21 @@ package no1.payamax.api.config.r2dbc
 import jakarta.persistence.Entity
 import org.hibernate.boot.Metadata
 import org.hibernate.boot.MetadataSources
+import org.hibernate.boot.model.relational.ColumnOrderingStrategy
 import org.hibernate.boot.model.naming.Identifier
 import org.hibernate.boot.model.naming.ImplicitForeignKeyNameSource
 import org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
 import org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder
+import org.hibernate.boot.spi.MetadataImplementor
 import org.hibernate.cfg.AvailableSettings
+import org.hibernate.dialect.temptable.TemporaryTableColumn
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment
+import org.hibernate.mapping.Column
+import org.hibernate.mapping.Constraint
+import org.hibernate.mapping.PersistentClass
+import org.hibernate.mapping.Table
+import org.hibernate.mapping.UserDefinedObjectType
 import org.hibernate.tool.schema.spi.DelayedDropRegistryNotAvailableImpl
 import org.hibernate.tool.schema.spi.SchemaManagementException
 import org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator
@@ -24,6 +32,8 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.primaryConstructor
 
 @Component
 class SchemaCheck(private val environment: Environment) : SmartInitializingSingleton {
@@ -60,7 +70,15 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 			val metadata = sources.metadataBuilder
 				.applyImplicitNamingStrategy(ReadableForeignKeyNamingStrategy())
 				.applyPhysicalNamingStrategy(EntitySuffixPhysicalNamingStrategy())
+				.applyColumnOrderingStrategy(EntityFieldColumnOrderingStrategy())
 				.build()
+			// Hibernate ignores Kotlin nullability and treats every reference type as nullable.
+			// id stays not null: the property is Long? only so an insert can omit it, and the
+			// database fills it with nextval('id').
+			applyKotlinNullability(metadata)
+			// Schema export does not build a SessionFactory, so the column ordering strategy
+			// has to be applied here before the create-table script is written.
+			(metadata as MetadataImplementor).orderColumns(true)
 			var mismatch: SchemaManagementException? = null
 			try {
 				SchemaManagementToolCoordinator.process(
@@ -74,8 +92,8 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 			}
 			val unmapped = unmappedColumns(metadata)
 			appendUnmappedColumns(scratch, unmapped)
-			// Hibernate's update script adds columns and changes their type, but it never
-			// alters nullability, so a nullable mismatch is neither scripted nor rejected.
+			// The update script adds columns and changes their type, but it never alters
+			// nullability of a column that already exists.
 			val nullability = nullabilityChanges(metadata)
 			appendNullabilityChanges(scratch, nullability)
 			val indexes = indexChanges(metadata, scratch, validationFailed = mismatch != null)
@@ -173,6 +191,23 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 		val existing = scratch.readText()
 		val separator = if (existing.isEmpty() || existing.endsWith("\n")) "" else "\n"
 		scratch.appendText(separator + script + "\n")
+	}
+
+	private fun applyKotlinNullability(metadata: Metadata) {
+		for (binding in metadata.entityBindings) {
+			val entity = binding.mappedClass
+			val identifier = binding.identifierProperty
+				?: error("Schema check found no id property on [${binding.entityName}]")
+			for (column in identifier.columns) {
+				column.isNullable = databaseNullable(entity, identifier.name)
+			}
+			for (property in binding.properties) {
+				val nullable = databaseNullable(entity, property.name)
+				for (column in property.columns) {
+					column.isNullable = nullable
+				}
+			}
+		}
 	}
 
 	private fun nullabilityChanges(metadata: Metadata): List<NullabilityChange> {
@@ -453,7 +488,7 @@ class SchemaCheck(private val environment: Environment) : SmartInitializingSingl
 			VERSION.matchEntire(file.name)?.groupValues?.get(1)?.toIntOrNull()
 		}?.maxOrNull() ?: 0) + 1
 		val stamp = LocalDateTime.now().format(STAMP)
-		val migration = File(directory, "V${version.toString().padStart(5, '0')}__$stamp.sql")
+		val migration = File(directory, migrationFileName(version, stamp, gitBranch()))
 		scratch.copyTo(migration, overwrite = false)
 		log.warn("Schema differs from the entity model. Wrote {}", migration.path)
 	}
@@ -544,6 +579,78 @@ private fun indexDescription(unique: Boolean, columns: List<String>, expression:
 	val kind = if (unique) "unique " else ""
 	val body = if (expression) "an expression" else columns.joinToString(", ")
 	return "$kind($body)"
+}
+
+internal fun migrationFileName(version: Int, stamp: String, branch: String): String {
+	val suffix = branch.replace(Regex("[^A-Za-z0-9_-]+"), "_").trim('_')
+	check(suffix.isNotEmpty()) { "Schema check cannot use git branch [$branch] as a migration suffix" }
+	return "V${version.toString().padStart(5, '0')}__${stamp}_$suffix.sql"
+}
+
+private fun gitBranch(): String {
+	val process = try {
+		ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD")
+			.redirectError(ProcessBuilder.Redirect.DISCARD)
+			.start()
+	} catch (failure: java.io.IOException) {
+		throw IllegalStateException("Schema check could not read the current git branch", failure)
+	}
+	val branch = process.inputStream.bufferedReader().use { it.readText() }.trim()
+	check(process.waitFor() == 0 && branch.isNotEmpty()) { "Schema check could not read the current git branch" }
+	return branch
+}
+
+internal fun databaseNullable(entity: Class<*>, propertyName: String): Boolean {
+	if (propertyName == "id") return false
+	val marked = entity.kotlin.memberProperties
+		.filter { it.name == propertyName }
+		.map { it.returnType.isMarkedNullable }
+		.distinct()
+	check(marked.size == 1) {
+		"Schema check found ${marked.size} nullability declarations for [${entity.simpleName}.$propertyName]"
+	}
+	return marked.single()
+}
+
+internal class EntityFieldColumnOrderingStrategy : ColumnOrderingStrategy {
+	override fun orderTableColumns(table: Table, metadata: Metadata): List<Column>? {
+		val binding = metadata.entityBindings.firstOrNull { it.table.exportIdentifier == table.exportIdentifier }
+			?: return null
+		val entity = binding.mappedClass ?: return null
+		val names = entity.kotlin.primaryConstructor?.parameters?.mapNotNull { it.name }.orEmpty()
+		if (names.isEmpty()) return null
+		val remaining = ArrayList(table.columns)
+		val ordered = ArrayList<Column>(remaining.size)
+		for (name in names) {
+			val property = persistentProperty(binding, name) ?: continue
+			for (column in property.columns) {
+				if (column.value.table.exportIdentifier != table.exportIdentifier) continue
+				val index = remaining.indexOf(column)
+				if (index >= 0) ordered += remaining.removeAt(index)
+			}
+		}
+		ordered += remaining
+		return ordered
+	}
+
+	override fun orderConstraintColumns(constraint: Constraint, metadata: Metadata): List<Column>? {
+		val ordered = orderTableColumns(constraint.table, metadata) ?: return null
+		val rank = HashMap<Column, Int>(ordered.size)
+		ordered.forEachIndexed { index, column -> rank.putIfAbsent(column, index) }
+		return constraint.columns.sortedBy { rank[it] ?: Int.MAX_VALUE }
+	}
+
+	override fun orderUserDefinedTypeColumns(
+		userDefinedType: UserDefinedObjectType,
+		metadata: Metadata,
+	): List<Column>? = null
+
+	override fun orderTemporaryTableColumns(temporaryTableColumns: MutableList<TemporaryTableColumn>, metadata: Metadata) =
+		Unit
+
+	private fun persistentProperty(binding: PersistentClass, name: String) =
+		if (binding.identifierProperty?.name == name) binding.identifierProperty
+		else binding.properties.find { it.name == name }
 }
 
 internal class ReadableForeignKeyNamingStrategy : ImplicitNamingStrategyJpaCompliantImpl() {

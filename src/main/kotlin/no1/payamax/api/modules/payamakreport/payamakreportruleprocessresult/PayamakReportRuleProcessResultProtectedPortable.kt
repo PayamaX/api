@@ -7,7 +7,7 @@ data class PayamakReportRuleProcessResultProtectedPortable(
 	val globalId: UUID,
 	val reportId: Long?,
 	val processorName: String,
-	val processorVersion: String,
+	val processorVersion: Int,
 	val generalRank: Float,
 	val userOverrideRank: Float?,
 	val processorProvidedComment: String?,

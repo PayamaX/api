@@ -7,6 +7,7 @@ import jakarta.persistence.Id as JpaId
 import jakarta.persistence.Table as JpaTable
 import jakarta.persistence.UniqueConstraint
 import no1.payamax.api.config.r2dbc.Sequenced
+import org.hibernate.annotations.ColumnDefault
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
 import java.time.Instant
@@ -27,13 +28,16 @@ import java.util.UUID
 class RankedOriginEntity(
 	@JpaId
 	@Id
+	@ColumnDefault("nextval('id')")
 	override var id: Long? = null,
 	override var globalId: UUID,
 	var updated: Instant,
 	var deleted: Instant?,
+
+	@Column(length = 16)
 	var origin: String,
-	var rank: Double,
+	var rank: Float,
 	var ownerGlobalId: UUID?,
 	var position: Int,
-	@Column(length = 400) var comment: String? = null,
+	@Column(length = 512) var comment: String? = null,
 ) : Sequenced
