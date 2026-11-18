@@ -13,7 +13,7 @@ import jakarta.persistence.Table as JpaTable
 
 @JpaTable(
 	uniqueConstraints = [UniqueConstraint(name = "uq__payamak_report_rule_process_result__global_id", columnNames = ["global_id"])],
-	indexes = [Index("uq__payamak_report_rule_process_result__payamak_report_id", columnList = "payamak_report_id")]
+	indexes = [Index("ix__payamak_report_rule_process_result__payamak_report_id", columnList = "payamak_report_id")]
 )
 @Table
 @Entity

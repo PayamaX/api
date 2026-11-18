@@ -68,4 +68,4 @@ end if;
 alter table "public"."payamak_report" drop column "reporter";
 end
 $$;
-create index uq__payamak_report_rule_process_result__payamak_report_id on payamak_report_rule_process_result (payamak_report_id);
+create index ix__payamak_report_rule_process_result__payamak_report_id on payamak_report_rule_process_result (payamak_report_id);
