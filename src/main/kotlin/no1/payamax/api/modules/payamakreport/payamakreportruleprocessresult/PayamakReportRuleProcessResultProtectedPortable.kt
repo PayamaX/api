@@ -3,7 +3,7 @@ package no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult
 import java.util.UUID
 
 data class PayamakReportRuleProcessResultProtectedPortable(
-	val identifier: Long?,
+	val identifier: Long,
 	val globalId: UUID,
 	val reportId: Long?,
 	val processorName: String,
@@ -15,7 +15,7 @@ data class PayamakReportRuleProcessResultProtectedPortable(
 ) {
 	companion object {
 		fun create(entity: PayamakReportRuleProcessResultEntity): PayamakReportRuleProcessResultProtectedPortable = PayamakReportRuleProcessResultProtectedPortable(
-			entity.id,
+			entity.id ?: throw IllegalArgumentException("entity id is null"),
 			entity.globalId,
 			entity.payamakReportId,
 			entity.processorName,
