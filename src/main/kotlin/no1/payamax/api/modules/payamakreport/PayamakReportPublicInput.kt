@@ -54,4 +54,19 @@ data class PayamakReportPublicInput(
 		result = 31 * result + processorsReports.contentHashCode()
 		return result
 	}
+
+	companion object {
+		fun core(item: PayamakReportPublicInput): PayamakReportPublicInput = PayamakReportPublicInput(
+			item.origin,
+			item.body,
+			item.sha512,
+			item.moment,
+			item.reporterUserGlobalId,
+			item.reporterComment,
+			item.calcedRank,
+			item.detectedDiagnostics,
+			item.expectedDiagnostics,
+			item.processorsReports,
+		)
+	}
 }

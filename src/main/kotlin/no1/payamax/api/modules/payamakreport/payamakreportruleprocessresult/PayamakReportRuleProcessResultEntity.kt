@@ -1,6 +1,7 @@
 package no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult
 
 import jakarta.persistence.Entity
+import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.UniqueConstraint
@@ -10,9 +11,10 @@ import org.springframework.data.relational.core.mapping.Table
 import java.util.UUID
 import jakarta.persistence.Table as JpaTable
 
-@JpaTable(uniqueConstraints = [
-	UniqueConstraint(name = "uq__payamak_report_rule_process_result__global_id", columnNames = ["global_id"])
-])
+@JpaTable(
+	uniqueConstraints = [UniqueConstraint(name = "uq__payamak_report_rule_process_result__global_id", columnNames = ["global_id"])],
+	indexes = [Index("uq__payamak_report_rule_process_result__payamak_report_id", columnList = "payamak_report_id")]
+)
 @Table
 @Entity
 class PayamakReportRuleProcessResultEntity (

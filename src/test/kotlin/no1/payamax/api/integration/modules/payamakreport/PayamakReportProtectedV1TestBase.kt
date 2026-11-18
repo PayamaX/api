@@ -2,6 +2,7 @@ package no1.payamax.api.integration.modules.payamakreport
 
 import kotlinx.coroutines.reactor.awaitSingle
 import no1.payamax.api.integration.TestsSuper
+import org.hamcrest.Matchers.matchesPattern
 import org.hamcrest.Matchers.nullValue
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -72,7 +73,7 @@ abstract class PayamakReportProtectedV1TestBase : TestsSuper() {
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
 			.andExpect(jsonPath("$.status").value(400))
 			.andExpect(jsonPath("$.title").value("Bad Request"))
-			.andExpect(jsonPath("$.detail").value("Entity not found"))
+			.andExpect(jsonPath("$.detail").value(matchesPattern("PayamakReportEntity with globalId `$uuidPattern` not found\\.")))
 			.andExpect(jsonPath("$.instance").value(instance))
 	}
 

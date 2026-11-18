@@ -2,4 +2,4 @@ package no1.payamax.api.modules.payamakreport
 
 import jakarta.validation.constraints.Size
 
-data class PayamakReportsCoreInput(@Size(min = 1, max = 100) val items: List<PayamakReportItemInput>)
+data class PayamakReportsCoreInput(@Size(min = 1, max = 100) val items: List<PayamakReportPublicInput>)

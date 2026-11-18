@@ -1,6 +1,7 @@
 package no1.payamax.api.integration.modules.rankedorigin
 
 import kotlinx.coroutines.runBlocking
+import org.hamcrest.Matchers.matchesPattern
 import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
@@ -58,7 +59,7 @@ class DeleteProtectedRankedOriginTest : RankedOriginsProtectedV1TestBase() {
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
 			.andExpect(jsonPath("$.status").value(400))
 			.andExpect(jsonPath("$.title").value("Bad Request"))
-			.andExpect(jsonPath("$.detail").value("Entity not found"))
+			.andExpect(jsonPath("$.detail").value(matchesPattern("RankedOriginEntity with globalId `$uuidPattern` not found\\.")))
 	}
 
 	@Test

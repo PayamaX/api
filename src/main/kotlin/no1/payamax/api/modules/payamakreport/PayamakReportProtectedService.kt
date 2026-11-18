@@ -50,11 +50,11 @@ class PayamakReportProtectedService(
 	}
 
 	override suspend fun delete(globalIds: Array<UUID>) {
-		if (globalIds.isNotEmpty()) {
-			throw InvalidValueException("GlobalIds cannot be empty")
+		if (globalIds.isEmpty()) {
+			throw InvalidValueException("GlobalIds is empty")
 		}
 		val entities = repo.findByGlobalIdIn(globalIds)
-		if (entities.isNotEmpty()) {
+		if (entities.isEmpty()) {
 			throw InvalidValueException("No entity found with ids ${globalIds.contentToString()}")
 		}
 		val processorResults = ruleResultRepo.findAllByPayamakReportIdIn(entities.map { it.id!! })

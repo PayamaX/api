@@ -64,6 +64,8 @@ abstract class TestsSuper {
 
 	protected fun untrustedToken(): String = accessToken(REALM, UNTRUSTED_CLIENT, USERNAME, PASSWORD)
 
+	protected val uuidPattern = "[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}"
+
 	/**
 	 * Empties every application table and restarts every sequence in `public` and `audit`.
 	 * `flyway_schema_history` stays so later tests still see the applied migrations.
