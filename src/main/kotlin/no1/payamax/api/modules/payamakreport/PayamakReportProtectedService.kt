@@ -44,7 +44,9 @@ class PayamakReportProtectedService(
 	override suspend fun delete(globalId: UUID): PayamakReportProtectedPortable {
 		val entity = repo.findByGlobalId(globalId) ?: throw EntityNotFoundException(PayamakReportEntity::class.java, globalId)
 		val processorResults = ruleResultRepo.findAllByPayamakReportId(entity.id!!)
-		ruleResultRepo.deleteAll(processorResults)
+		if(processorResults.isNotEmpty()) {
+			ruleResultRepo.deleteAll(processorResults)
+		}
 		repo.delete(entity)
 		return PayamakReportProtectedPortable.create(entity)
 	}

@@ -1,5 +1,5 @@
 package no1.payamax.api.modules.payamakreport
 
 interface PayamakReportCoreContract {
-	suspend fun persist(input: PayamakReportsCoreInput)
+	suspend fun persist(input: PayamakReportPersistInput)
 }

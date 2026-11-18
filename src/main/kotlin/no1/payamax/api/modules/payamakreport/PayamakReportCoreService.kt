@@ -13,7 +13,7 @@ class PayamakReportCoreService(
 ) : PayamakReportCoreContract {
 
 	@Transactional
-	override suspend fun persist(input: PayamakReportsCoreInput) {
+	override suspend fun persist(input: PayamakReportPersistInput) {
 		for (item in input.items) {
 			val entity = PayamakReportEntity(
 				null,
