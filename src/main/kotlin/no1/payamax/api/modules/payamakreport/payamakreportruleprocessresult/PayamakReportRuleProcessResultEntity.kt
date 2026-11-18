@@ -28,12 +28,12 @@ class PayamakReportRuleProcessResultEntity (
 
 	@jakarta.persistence.Transient
 	@org.springframework.data.relational.core.mapping.Column("payamak_report_id")
-	var payamakReportId: Long?,
+	var payamakReportId: Long,
 
 	@ManyToOne
 	@JoinColumn(name = "payamak_report_id", referencedColumnName = "id")
 	@org.springframework.data.annotation.Transient
-	var payamakReport: PayamakReportEntity? = null,
+	var payamakReport: PayamakReportEntity = null!!,
 
 	@Column(length = 32)
 	var processorName: String,

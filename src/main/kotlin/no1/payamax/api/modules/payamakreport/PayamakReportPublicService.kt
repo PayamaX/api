@@ -32,7 +32,7 @@ class PayamakReportPublicService(
 				val entity2 = PayamakReportRuleProcessResultEntity(
 					null,
 					UUID.randomUUID(),
-					saved.id,
+					saved.id!!,
 					saved,
 					proc.processorName,
 					proc.processorVersion,
