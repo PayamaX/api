@@ -2,6 +2,7 @@ package no1.payamax.api.modules.payamakreport
 
 import io.swagger.v3.oas.annotations.Operation
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Size
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PagedModel
@@ -22,7 +23,8 @@ import java.util.UUID
 class PayamakReportsProtectedV1Controller(private val payamakReportProtectedProvider: PayamakReportProtectedContract) {
 	@Operation(operationId = "getProtectedPayamakReports")
 	@GetMapping
-	suspend fun get(@ParameterObject pageable: Pageable, @ParameterObject filter: PayamakReportProtectedFilter? = null): PagedModel<PayamakReportProtectedPortable> = payamakReportProtectedProvider.paged(pageable, filter)
+	suspend fun get(@ParameterObject pageable: Pageable, @ParameterObject filter: PayamakReportProtectedFilter? = null): PagedModel<PayamakReportProtectedPortable> =
+		payamakReportProtectedProvider.paged(pageable, filter)
 
 	@Operation(operationId = "getProtectedPayamakReport")
 	@GetMapping("/{globalId}")
@@ -34,11 +36,12 @@ class PayamakReportsProtectedV1Controller(private val payamakReportProtectedProv
 
 	@Operation(operationId = "deleteProtectedPayamakReports")
 	@DeleteMapping
-	suspend fun delete(globalIds: Array<UUID>): Unit = payamakReportProtectedProvider.delete(globalIds)
+	suspend fun delete(@Size(min = 1, max = 999) globalIds: Array<UUID>): Unit = payamakReportProtectedProvider.delete(globalIds)
 
 	@Operation(operationId = "putProtectedPayamakReport")
 	@PutMapping("/{globalId}")
-	suspend fun put(@PathVariable("globalId") globalId: UUID, @RequestBody @Valid input: PayamakReportPutProtectedInput): PayamakReportProtectedPortable = payamakReportProtectedProvider.update(globalId, input)
+	suspend fun put(@PathVariable("globalId") globalId: UUID, @RequestBody @Valid input: PayamakReportPutProtectedInput): PayamakReportProtectedPortable =
+		payamakReportProtectedProvider.update(globalId, input)
 
 	@Operation(operationId = "patchProtectedPayamakReportFlag")
 	@PatchMapping("/{globalId}/flag")
