@@ -33,7 +33,6 @@ class PayamakReportPublicService(
 					null,
 					UUID.randomUUID(),
 					saved.id!!,
-					saved,
 					proc.processorName,
 					proc.processorVersion,
 					proc.generalRank,
@@ -41,6 +40,7 @@ class PayamakReportPublicService(
 					proc.processorProvidedComment,
 					proc.position
 				)
+				entity2.payamakReport = saved
 				ruleReportRepo.save(entity2)
 			}
 		}

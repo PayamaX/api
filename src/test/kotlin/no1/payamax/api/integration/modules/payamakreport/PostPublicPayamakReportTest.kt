@@ -124,7 +124,7 @@ class PostPublicPayamakReportTest : TestsSuper() {
 		val report = storedReport(origin)
 		assertEquals(origin, report.origin)
 		assertEquals("hello from $origin", report.body)
-		assertEquals("abc123", report.sha512)
+		assertEquals(SHA512, report.sha512)
 		assertEquals(reporter, report.reporterUserGlobalId)
 		assertEquals("seen on device", report.reporterComment)
 		assertEquals("Spam", report.detectedDiagnostics)
@@ -134,8 +134,8 @@ class PostPublicPayamakReportTest : TestsSuper() {
 		val results = storedResults(report.id)
 		assertEquals(
 			listOf(
-				StoredResult(report.id, "rule-a", "1.2", 0.25f, 0.5f, "kept", 1),
-				StoredResult(report.id, "rule-b", "3", 1.0f, null, "auto", 2),
+				StoredResult(report.id, "rule-a", 12, 0.25f, 0.5f, "kept", 1),
+				StoredResult(report.id, "rule-b", 3, 1.0f, null, "auto", 2),
 			),
 			results,
 		)
@@ -183,7 +183,7 @@ class PostPublicPayamakReportTest : TestsSuper() {
 				StoredResult(
 					reportId = (row.get("payamak_report_id") as Number).toLong(),
 					processorName = row.get("processor_name", String::class.java)!!,
-					processorVersion = row.get("processor_version", String::class.java)!!,
+					processorVersion = (row.get("processor_version") as Number).toInt(),
 					generalRank = (row.get("general_rank") as Number).toFloat(),
 					userOverrideRank = (row.get("user_override_rank") as Number?)?.toFloat(),
 					processorProvidedComment = row.get("processor_provided_comment", String::class.java)!!,
@@ -210,7 +210,7 @@ class PostPublicPayamakReportTest : TestsSuper() {
 	}
 
 	private fun itemJson(origin: String, reporter: UUID): String =
-		"""{"origin":"$origin","body":"hello from $origin","sha512":"abc123","moment":"1762963200.123456789","reporterUserGlobalId":"$reporter","reporterComment":"seen on device","calcedRank":0.5,"detectedDiagnostics":"Spam","expectedDiagnostics":"Useful","processorsReports":[{"processorName":"rule-a","processorVersion":"1.2","generalRank":0.25,"userOverrideRank":0.5,"processorProvidedComment":"kept","position":1},{"processorName":"rule-b","processorVersion":"3","generalRank":1.0,"userOverrideRank":null,"processorProvidedComment":"auto","position":2}]}"""
+		"""{"origin":"$origin","body":"hello from $origin","sha512":"$SHA512","moment":"1762963200.123456789","reporterUserGlobalId":"$reporter","reporterComment":"seen on device","calcedRank":0.5,"detectedDiagnostics":"Spam","expectedDiagnostics":"Useful","processorsReports":[{"processorName":"rule-a","processorVersion":12,"generalRank":0.25,"userOverrideRank":0.5,"processorProvidedComment":"kept","position":1},{"processorName":"rule-b","processorVersion":3,"generalRank":1.0,"userOverrideRank":null,"processorProvidedComment":"auto","position":2}]}"""
 
 	private data class StoredReport(
 		val id: Long,
@@ -227,7 +227,7 @@ class PostPublicPayamakReportTest : TestsSuper() {
 	private data class StoredResult(
 		val reportId: Long,
 		val processorName: String,
-		val processorVersion: String,
+		val processorVersion: Int,
 		val generalRank: Float,
 		val userOverrideRank: Float?,
 		val processorProvidedComment: String,
@@ -236,5 +236,6 @@ class PostPublicPayamakReportTest : TestsSuper() {
 
 	private companion object {
 		const val REPORTS = "/v1/public/payamak-report"
+		const val SHA512 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567"
 	}
 }

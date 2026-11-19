@@ -7,7 +7,7 @@ drop schema "audit" cascade;
 alter table "public"."payamak_report"
 	alter column "global_id" set not null;
 alter table "public"."payamak_report"
-	add column "state" varchar(255) not null;
+	add column "state" varchar(255) not null check (state in ('PENDING', 'REVIEWED', 'POSTPONED'));
 alter table "public"."payamak_report"
 	alter column "origin" set data type varchar(16);
 alter table "public"."payamak_report"
@@ -25,17 +25,11 @@ alter table "public"."payamak_report"
 alter table "public"."payamak_report"
 	add column "flagged" boolean not null;
 alter table "public"."payamak_report"
-	add column "detected_diagnostics" varchar(255) not null;
+	add column "detected_diagnostics" varchar(255) not null check (detected_diagnostics in ('Important', 'Useful', 'Spam'));
 alter table "public"."payamak_report"
-	add column "expected_diagnostics" varchar(255);
+	add column "expected_diagnostics" varchar(255) check (expected_diagnostics in ('Important', 'Useful', 'Spam'));
 alter table "public"."payamak_report"
 	add constraint "uq__payamak_report__global_id" unique ("global_id");
-alter table "public"."payamak_report"
-	add check (state in ('PENDING', 'REVIEWED', 'POSTPONED'));
-alter table "public"."payamak_report"
-	add check (detected_diagnostics in ('Important', 'Useful', 'Spam'));
-alter table "public"."payamak_report"
-	add check (expected_diagnostics in ('Important', 'Useful', 'Spam'));
 alter table "public"."payamak_report"
 	add check (decided_diagnostics in ('Important', 'Useful', 'Spam'));
 create index "ix__payamak_report__state" on "public"."payamak_report" ("state");

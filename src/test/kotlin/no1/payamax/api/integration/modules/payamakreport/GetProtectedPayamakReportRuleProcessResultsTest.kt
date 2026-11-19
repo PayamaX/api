@@ -24,10 +24,10 @@ class GetProtectedPayamakReportRuleProcessResultsTest : PayamakReportProtectedV1
 			val reportGlobalId = insert()
 			val reportId = reportId(reportGlobalId)
 			val otherReportId = reportId(insert(origin = "Other"))
-			insertResult(otherReportId, processorName = "other", processorVersion = "9", generalRank = 0.1f, userOverrideRank = null, comment = "ignored", position = 1)
+			insertResult(otherReportId, processorName = "other", processorVersion = 9, generalRank = 0.1f, userOverrideRank = null, comment = "ignored", position = 1)
 			reportGlobalId to listOf(
-				insertResult(reportId, processorName = "rule-a", processorVersion = "1.2", generalRank = 0.25f, userOverrideRank = 0.5f, comment = "kept", position = 1),
-				insertResult(reportId, processorName = "rule-b", processorVersion = "3", generalRank = 1.0f, userOverrideRank = null, comment = "auto", position = 2),
+				insertResult(reportId, processorName = "rule-a", processorVersion = 12, generalRank = 0.25f, userOverrideRank = 0.5f, comment = "kept", position = 1),
+				insertResult(reportId, processorName = "rule-b", processorVersion = 3, generalRank = 1.0f, userOverrideRank = null, comment = "auto", position = 2),
 			)
 		}
 
@@ -180,7 +180,7 @@ class GetProtectedPayamakReportRuleProcessResultsTest : PayamakReportProtectedV1
 	private suspend fun insertResult(
 		reportId: Long,
 		processorName: String,
-		processorVersion: String,
+		processorVersion: Int,
 		generalRank: Float,
 		userOverrideRank: Float?,
 		comment: String,
@@ -233,7 +233,7 @@ class GetProtectedPayamakReportRuleProcessResultsTest : PayamakReportProtectedV1
 		val globalId: UUID,
 		val reportId: Long,
 		val processorName: String,
-		val processorVersion: String,
+		val processorVersion: Int,
 		val generalRank: Float,
 		val userOverrideRank: Float?,
 		val processorProvidedComment: String,

@@ -10,9 +10,9 @@ import java.time.Instant
 import java.util.*
 
 data class PayamakReportPublicInput(
-	@NotNull val origin: String,
-	val body: String?,
-	val sha512: String?,
+	@Length(max = 16) @NotNull val origin: String,
+	@Length(max = 4096) val body: String?,
+	@Length(min = 88, max = 88) val sha512: String?,
 	@NotNull val moment: Instant,
 	val reporterUserGlobalId: UUID?,
 	@NotNull @Length(max = 255) val reporterComment: String?,

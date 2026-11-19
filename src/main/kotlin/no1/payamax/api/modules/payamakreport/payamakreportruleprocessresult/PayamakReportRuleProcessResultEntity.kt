@@ -19,21 +19,16 @@ import jakarta.persistence.Table as JpaTable
 )
 @Table
 @Entity
-class PayamakReportRuleProcessResultEntity (
+class PayamakReportRuleProcessResultEntity(
 	@jakarta.persistence.Id
 	@org.springframework.data.annotation.Id
 	@ColumnDefault("nextval('id')")
 	override var id: Long?,
 	override var globalId: UUID,
 
-	@jakarta.persistence.Transient
+	@Column(name = "payamak_report_id")
 	@org.springframework.data.relational.core.mapping.Column("payamak_report_id")
 	var payamakReportId: Long,
-
-	@ManyToOne
-	@JoinColumn(name = "payamak_report_id", referencedColumnName = "id")
-	@org.springframework.data.annotation.Transient
-	var payamakReport: PayamakReportEntity = null!!,
 
 	@Column(length = 32)
 	var processorName: String,
@@ -45,4 +40,9 @@ class PayamakReportRuleProcessResultEntity (
 	@Column(length = 4096)
 	var processorProvidedComment: String?,
 	var position: Int,
-): Sequenced
+) : Sequenced {
+	@ManyToOne
+	@JoinColumn(name = "payamak_report_id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false)
+	@org.springframework.data.annotation.Transient
+	lateinit var payamakReport: PayamakReportEntity
+}

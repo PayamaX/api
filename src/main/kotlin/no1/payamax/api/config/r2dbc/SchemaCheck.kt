@@ -520,8 +520,7 @@ private fun dropColumns(actual: TableModel, required: TableModel): List<String> 
 
 private fun createTable(table: TableModel): String {
 	val columns = table.columns.joinToString(",\n\t") { column ->
-		val checks = table.checks.filter { it.columns == listOf(column.name) }.joinToString("") { " check (${it.expression})" }
-		"${quoteIdentifier(column.name)} ${columnDefinition(column)}$checks"
+		"${quoteIdentifier(column.name)} ${columnDefinition(column)}${columnChecks(table, column.name)}"
 	}
 	val primaryKey = if (table.primaryKey.isEmpty()) "" else ",\n\tprimary key (${table.primaryKey.joinToString(", ") { quoteIdentifier(it) }})"
 	return "create table ${qualify(table.schema, table.name)} (\n\t$columns$primaryKey\n);"
@@ -535,7 +534,7 @@ private fun alterColumns(required: TableModel, actual: TableModel): List<String>
 		val tableName = qualify(required.schema, required.name)
 		val columnName = quoteIdentifier(column.name)
 		if (current == null) {
-			statements += "alter table $tableName add column $columnName ${columnDefinition(column)};"
+			statements += "alter table $tableName add column $columnName ${columnDefinition(column)}${columnChecks(required, column.name)};"
 			continue
 		}
 		if (canonicalType(current.sqlType) != canonicalType(column.sqlType)) {
@@ -584,11 +583,18 @@ private fun createForeignKeys(required: TableModel, actual: TableModel?): List<S
 private fun sameUnique(required: KeyModel, actual: KeyModel): Boolean =
 	required.name == actual.name && required.columns == actual.columns
 
+private fun columnChecks(table: TableModel, columnName: String): String =
+	table.checks.filter { it.columns == listOf(columnName) }.joinToString("") { check ->
+		val name = check.name?.let { " constraint ${quoteIdentifier(it)}" }.orEmpty()
+		"$name check (${check.expression})"
+	}
+
 private fun createChecks(required: TableModel, actual: TableModel?): List<String> {
 	val existing = actual?.checks.orEmpty()
+	val existingColumns = actual?.columns?.map { it.name }?.toSet().orEmpty()
 	return required.checks.filter { desired ->
-		val createdWithTable = actual == null && desired.columns.size == 1
-		!createdWithTable && existing.none { sameCheck(desired, it) }
+		val createdWithColumn = desired.columns.size == 1 && (actual == null || desired.columns.single() !in existingColumns)
+		!createdWithColumn && existing.none { sameCheck(desired, it) }
 	}.map { check ->
 		val name = check.name?.let { "constraint ${quoteIdentifier(it)} " }.orEmpty()
 		"alter table ${qualify(required.schema, required.name)} add ${name}check (${check.expression});"
