@@ -9,11 +9,13 @@ WORKDIR /workspace
 COPY gradle/libs.versions.toml gradle/libs.versions.toml
 COPY settings.gradle.kts build.gradle.kts gradle.properties ./
 
-RUN --mount=type=cache,target=/home/gradle/.gradle \
+RUN --mount=type=cache,target=/root/.gradle \
+    --mount=type=bind,from=mavenlocal,source=repository,target=/root/.m2/repository \
     gradle --no-daemon dependencies
 
 COPY src src
-RUN --mount=type=cache,target=/home/gradle/.gradle \
+RUN --mount=type=cache,target=/root/.gradle \
+    --mount=type=bind,from=mavenlocal,source=repository,target=/root/.m2/repository \
     gradle --no-daemon bootJar -x test \
     && jar="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar')" \
     && test -n "$jar" \

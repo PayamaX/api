@@ -92,11 +92,15 @@ jobs:
           mkdir -p assets/tls
           echo "$ROOT_CA" > assets/tls/root-ca.pem
 
+      - name: Prepare Maven local build context
+        run: mkdir -p .m2-empty/repository
+
       - name: Build and push images
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
+          build-contexts: mavenlocal=${{ github.workspace }}/.m2-empty
           platforms: linux/amd64,linux/arm64
           push: true
 

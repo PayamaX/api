@@ -1,6 +1,6 @@
 package no1.payamax.api.unit.r2dbc
 
-import no1.payamax.api.config.r2dbc.databaseNullable
+import no1.libs.dbmigration.databaseNullable
 import no1.payamax.api.modules.payamakreport.PayamakReportEntity
 import no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult.PayamakReportRuleProcessResultEntity
 import no1.payamax.api.modules.rankedorigin.RankedOriginEntity

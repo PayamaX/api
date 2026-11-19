@@ -1,10 +1,10 @@
 package no1.payamax.api.unit.r2dbc
 
-import no1.payamax.api.config.r2dbc.EntityFieldColumnOrderingStrategy
-import no1.payamax.api.config.r2dbc.EntitySuffixPhysicalNamingStrategy
-import no1.payamax.api.config.r2dbc.ReadableForeignKeyNamingStrategy
-import no1.payamax.api.config.r2dbc.SequenceName
-import no1.payamax.api.config.r2dbc.prepareModel
+import no1.libs.dbmigration.EntityFieldColumnOrderingStrategy
+import no1.libs.dbmigration.EntitySuffixPhysicalNamingStrategy
+import no1.libs.dbmigration.ReadableForeignKeyNamingStrategy
+import no1.libs.dbmigration.SequenceName
+import no1.libs.dbmigration.prepareModel
 import no1.payamax.api.modules.payamakreport.PayamakReportEntity
 import no1.payamax.api.modules.payamakreport.payamakreportruleprocessresult.PayamakReportRuleProcessResultEntity
 import no1.payamax.api.modules.rankedorigin.RankedOriginEntity
