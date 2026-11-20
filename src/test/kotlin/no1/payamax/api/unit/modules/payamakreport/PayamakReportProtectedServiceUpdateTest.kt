@@ -36,7 +36,7 @@ class PayamakReportProtectedServiceUpdateTest : PayamakReportProtectedServiceTes
 			verify(repo).findByGlobalId(entity.globalId)
 			verify(repo).save(entity)
 		}
-		verifyNoInteractions( ruleResultRepo, entityTemplate, sorts)
+		verifyNoInteractions(ruleResultRepo, entityTemplate, sorts)
 	}
 
 	@Test
@@ -58,7 +58,7 @@ class PayamakReportProtectedServiceUpdateTest : PayamakReportProtectedServiceTes
 			verify(repo).findByGlobalId(entity.globalId)
 			verify(repo).save(entity)
 		}
-		verifyNoInteractions( ruleResultRepo, entityTemplate, sorts)
+		verifyNoInteractions(ruleResultRepo, entityTemplate, sorts)
 	}
 
 	@Test
@@ -78,6 +78,6 @@ class PayamakReportProtectedServiceUpdateTest : PayamakReportProtectedServiceTes
 			verify(repo).findByGlobalId(missing)
 			verify(repo, never()).save(any())
 		}
-		verifyNoInteractions( ruleResultRepo, entityTemplate, sorts)
+		verifyNoInteractions(ruleResultRepo, entityTemplate, sorts)
 	}
 }

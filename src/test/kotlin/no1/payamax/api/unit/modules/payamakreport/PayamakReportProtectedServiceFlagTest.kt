@@ -90,6 +90,6 @@ class PayamakReportProtectedServiceFlagTest : PayamakReportProtectedServiceTestB
 			verify(repo).findByGlobalId(missing)
 			verify(repo, never()).save(any())
 		}
-		verifyNoInteractions( ruleResultRepo, entityTemplate, sorts)
+		verifyNoInteractions(ruleResultRepo, entityTemplate, sorts)
 	}
 }

@@ -10,11 +10,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.r2dbc.core.DatabaseClient
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.RequestBuilder
 import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -24,16 +21,7 @@ import java.util.UUID
 @AutoConfigureMockMvc
 abstract class PayamakReportProtectedV1TestBase : TestsSuper() {
 	@field:Autowired
-	protected lateinit var mockMvc: MockMvc
-
-	@field:Autowired
 	protected lateinit var databaseClient: DatabaseClient
-
-	protected fun exchange(request: RequestBuilder): ResultActions {
-		val actions = mockMvc.perform(request)
-		val result = actions.andReturn()
-		return if (result.request.isAsyncStarted) mockMvc.perform(asyncDispatch(result)) else actions
-	}
 
 	protected fun withToken(request: MockHttpServletRequestBuilder, token: String?): MockHttpServletRequestBuilder {
 		if (token == null) {

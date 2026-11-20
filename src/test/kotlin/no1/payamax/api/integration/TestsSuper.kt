@@ -4,8 +4,13 @@ import com.github.dockerjava.api.command.CreateContainerCmd
 import com.github.dockerjava.api.model.HostConfig
 import com.github.dockerjava.api.model.PortBinding
 import org.junit.jupiter.api.BeforeEach
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.RequestBuilder
+import org.springframework.test.web.servlet.ResultActions
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
 import org.testcontainers.containers.GenericContainer
 import java.sql.DriverManager
 import org.testcontainers.containers.Network
@@ -65,6 +70,15 @@ abstract class TestsSuper {
 	protected fun untrustedToken(): String = accessToken(REALM, UNTRUSTED_CLIENT, USERNAME, PASSWORD)
 
 	protected val uuidPattern = "[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}"
+
+	@field:Autowired
+	protected lateinit var mockMvc: MockMvc
+
+	protected fun exchange(request: RequestBuilder): ResultActions {
+		val actions = mockMvc.perform(request)
+		val result = actions.andReturn()
+		return if (result.request.isAsyncStarted) mockMvc.perform(asyncDispatch(result)) else actions
+	}
 
 	/**
 	 * Empties every application table and restarts every sequence in `public` and `audit`.
@@ -193,6 +207,8 @@ abstract class TestsSuper {
 			registry.add("spring.datasource.url") { jdbcUrl("pax") }
 			registry.add("spring.datasource.username") { "pax_dml_api" }
 			registry.add("spring.datasource.password") { "password" }
+			// Tests must not write Flyway files. The app still does that at startup.
+			registry.add("db.migration.enabled") { "false" }
 		}
 
 		private fun accessToken(realm: String, clientId: String, username: String, password: String): String {

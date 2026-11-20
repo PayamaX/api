@@ -8,11 +8,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.r2dbc.core.DatabaseClient
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.RequestBuilder
 import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
@@ -24,9 +21,6 @@ import java.util.UUID
 @SpringBootTest
 @AutoConfigureMockMvc
 abstract class RankedOriginsProtectedV1TestBase : TestsSuper() {
-	@field:Autowired
-	protected lateinit var mockMvc: MockMvc
-
 	@field:Autowired
 	protected lateinit var databaseClient: DatabaseClient
 
@@ -80,12 +74,6 @@ abstract class RankedOriginsProtectedV1TestBase : TestsSuper() {
 			request = request.header(HttpHeaders.AUTHORIZATION, "Bearer $token")
 		}
 		return exchange(request)
-	}
-
-	protected fun exchange(request: RequestBuilder): ResultActions {
-		val actions = mockMvc.perform(request)
-		val result = actions.andReturn()
-		return if (result.request.isAsyncStarted) mockMvc.perform(asyncDispatch(result)) else actions
 	}
 
 	protected fun ResultActions.expectForbidden(): ResultActions {

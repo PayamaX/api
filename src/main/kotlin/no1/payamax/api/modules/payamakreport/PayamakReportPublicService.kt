@@ -19,7 +19,7 @@ class PayamakReportPublicService(
 				item.origin,
 				item.body,
 				item.sha512,
-				item.reporterUserGlobalId,
+				null,
 				item.reporterComment,
 				null,
 				false,

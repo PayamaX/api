@@ -14,7 +14,6 @@ data class PayamakReportPublicInput(
 	@Length(max = 4096) val body: String?,
 	@Length(min = 88, max = 88) val sha512: String?,
 	@NotNull val moment: Instant,
-	val reporterUserGlobalId: UUID?,
 	@NotNull @Length(max = 255) val reporterComment: String?,
 	@DecimalMin("0.0") @DecimalMax("1.0") val calcedRank: Float,
 	@NotNull val detectedDiagnostics: PayamakReportDiagnostics,

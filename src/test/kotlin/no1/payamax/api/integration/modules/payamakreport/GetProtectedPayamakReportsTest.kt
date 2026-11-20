@@ -1,36 +1,18 @@
 package no1.payamax.api.integration.modules.payamakreport
 
-import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
-import no1.payamax.api.integration.TestsSuper
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
-import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
-import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.security.test.context.support.WithMockUser
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.RequestBuilder
 import org.springframework.test.web.servlet.ResultActions
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.UUID
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class GetProtectedPayamakReportsTest : TestsSuper() {
-	@field:Autowired
-	private lateinit var mockMvc: MockMvc
-
-	@field:Autowired
-	private lateinit var databaseClient: DatabaseClient
-
+class GetProtectedPayamakReportsTest : PayamakReportProtectedV1TestBase() {
 	@Test
 	@WithMockUser(roles = ["ADMIN"])
 	fun `get returns every report for ROLE_ADMIN`() {
@@ -183,7 +165,7 @@ class GetProtectedPayamakReportsTest : TestsSuper() {
 
 	@Test
 	@WithMockUser(roles = ["ADMIN"])
-	fun `get keeps flagged reports when flagged is false`() {
+	fun `get returns all reports regardless their flagged state when onlyFlagged is false`() {
 		// Arrange
 		val reports = runBlocking { insertSamples() }
 
@@ -264,24 +246,7 @@ class GetProtectedPayamakReportsTest : TestsSuper() {
 		if (onlyFlagged != null) {
 			request = request.param("onlyFlagged", onlyFlagged.toString())
 		}
-		if (token != null) {
-			request = request.header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-		}
-		return exchange(request)
-	}
-
-	private fun exchange(request: RequestBuilder): ResultActions {
-		val actions = mockMvc.perform(request)
-		val result = actions.andReturn()
-		return if (result.request.isAsyncStarted) mockMvc.perform(asyncDispatch(result)) else actions
-	}
-
-	private fun ResultActions.expectForbidden(): ResultActions {
-		return andExpect(status().isForbidden)
-			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
-			.andExpect(jsonPath("$.status").value(403))
-			.andExpect(jsonPath("$.title").value("Forbidden"))
-			.andExpect(jsonPath("$.detail").value("Access denied"))
+		return exchange(withToken(request, token))
 	}
 
 	private fun ResultActions.expectOkPage(total: Int): ResultActions {
@@ -292,7 +257,7 @@ class GetProtectedPayamakReportsTest : TestsSuper() {
 			.andExpect(jsonPath("$.content.length()").value(total))
 	}
 
-	private fun ResultActions.expectReport(index: Int, report: StoredReport): ResultActions =
+	private fun ResultActions.expectReport(index: Int, report: ListedReport): ResultActions =
 		expectReport(index, report.origin, report.state, report.flagged, report.globalId)
 
 	private fun ResultActions.expectReport(
@@ -312,41 +277,20 @@ class GetProtectedPayamakReportsTest : TestsSuper() {
 		return checks
 	}
 
-	private suspend fun insertSamples(): List<StoredReport> = listOf(
-		insert(origin = "Alerts", state = "PENDING", flagged = false),
-		insert(origin = "Notices", state = "REVIEWED", flagged = false),
-		insert(origin = "PayamaX", state = "PENDING", flagged = true),
-		insert(origin = "Queue", state = "POSTPONED", flagged = true),
+	private suspend fun insertSamples(): List<ListedReport> = listOf(
+		listed(origin = "Alerts", state = "PENDING", flagged = false),
+		listed(origin = "Notices", state = "REVIEWED", flagged = false),
+		listed(origin = "PayamaX", state = "PENDING", flagged = true),
+		listed(origin = "Queue", state = "POSTPONED", flagged = true),
 	)
 
-	private suspend fun insert(origin: String, state: String, flagged: Boolean): StoredReport {
-		val globalId = UUID.randomUUID()
-		databaseClient.sql(
-			"""
-			INSERT INTO payamak_report (global_id, origin, state, flagged, detected_diagnostics, body)
-			VALUES (:globalId, :origin, :state, :flagged, :detected, :body)
-			""".trimIndent(),
-		)
-			.bind("globalId", globalId)
-			.bind("origin", origin)
-			.bind("state", state)
-			.bind("flagged", flagged)
-			.bind("detected", "Spam")
-			.bind("body", "hello from $origin")
-			.fetch()
-			.rowsUpdated()
-			.awaitSingle()
-		return StoredReport(globalId, origin, state, flagged)
-	}
+	private suspend fun listed(origin: String, state: String, flagged: Boolean): ListedReport =
+		ListedReport(insert(origin = origin, state = state, flagged = flagged), origin, state, flagged)
 
-	private data class StoredReport(
+	private data class ListedReport(
 		val globalId: UUID,
 		val origin: String,
 		val state: String,
 		val flagged: Boolean,
 	)
-
-	private companion object {
-		const val REPORTS = "/v1/protected/payamak-reports"
-	}
 }

@@ -2,18 +2,9 @@ package no1.payamax.api.integration.modules.payamakreport
 
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
-import no1.payamax.api.integration.TestsSuper
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
-import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
-import org.springframework.r2dbc.core.DatabaseClient
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.RequestBuilder
 import org.springframework.test.web.servlet.ResultActions
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -22,15 +13,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class PostPublicPayamakReportTest : TestsSuper() {
-	@field:Autowired
-	private lateinit var mockMvc: MockMvc
-
-	@field:Autowired
-	private lateinit var databaseClient: DatabaseClient
-
+class PostPublicPayamakReportTest : PayamakReportProtectedV1TestBase() {
 	@Test
 	fun `post rejects an empty item list`() {
 		// Arrange
@@ -57,49 +40,12 @@ class PostPublicPayamakReportTest : TestsSuper() {
 		runBlocking { assertNothingStored() }
 	}
 
-	@Test
-	fun `post stores a report without credentials`() {
-		// Arrange
-		val reporter = UUID.fromString("11111111-1111-1111-1111-111111111111")
-		val body = reportJson(origin = "Anonymous", reporter = reporter)
-
-		// Act
-		val response = submit(body)
-
-		// Assert
-		response.andExpect(status().isOk).andExpect(content().string(""))
-		runBlocking { assertStored(origin = "Anonymous", reporter = reporter) }
-	}
-
-	@Test
-	fun `post stores a report for an authenticated caller`() {
-		// Arrange
-		val reporter = UUID.fromString("22222222-2222-2222-2222-222222222222")
-		val body = reportJson(origin = "Signed in", reporter = reporter)
-
-		// Act
-		val response = submit(body, token = readerToken())
-
-		// Assert
-		response.andExpect(status().isOk).andExpect(content().string(""))
-		runBlocking { assertStored(origin = "Signed in", reporter = reporter) }
-	}
-
 	private fun submit(body: String, token: String? = null): ResultActions {
-		var request = post(REPORTS)
+		val request = post(REPORTS)
 			.contentType(MediaType.APPLICATION_JSON)
 			.accept(MediaType.APPLICATION_JSON)
 			.content(body)
-		if (token != null) {
-			request = request.header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-		}
-		return exchange(request)
-	}
-
-	private fun exchange(request: RequestBuilder): ResultActions {
-		val actions = mockMvc.perform(request)
-		val result = actions.andReturn()
-		return if (result.request.isAsyncStarted) mockMvc.perform(asyncDispatch(result)) else actions
+		return exchange(withToken(request, token))
 	}
 
 	private fun expectItemCountRejected(response: ResultActions) {
