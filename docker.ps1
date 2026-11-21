@@ -14,9 +14,10 @@ foreach ($name in $envNames) {
 }
 
 $homeDirectory = if ($env:HOME) { $env:HOME } else { $env:USERPROFILE }
-$mavenLocal = Join-Path $homeDirectory ".m2"
-if (-not (Test-Path -LiteralPath (Join-Path $mavenLocal "repository"))) {
-    throw "Maven repository was not found at $mavenLocal"
+$mavenLocal = Join-Path $homeDirectory ".m2x"
+$mavenLocalRepository = Join-Path $mavenLocal "repository"
+if (-not (Test-Path -LiteralPath $mavenLocalRepository)) {
+    New-Item -ItemType Directory -Force -Path $mavenLocalRepository | Out-Null
 }
 
 docker build --load @buildArgs --build-context "mavenlocal=$mavenLocal" -t "ghcr.io/payamax/api-local:$paxTag" -f ./Dockerfile ./

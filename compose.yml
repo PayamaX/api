@@ -7,7 +7,7 @@ services:
             context: .
             dockerfile: Dockerfile
             additional_contexts:
-                mavenlocal: ${HOME}/.m2
+                mavenlocal: ${HOME:-${USERPROFILE}}/.m2x
             args:
                 PAX_JDK_VER: ${PAX_JDK_VER}
                 PAX_JRE_VER: ${PAX_JRE_VER}

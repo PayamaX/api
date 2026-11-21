@@ -25,13 +25,13 @@ alter table "public"."payamak_report"
 alter table "public"."payamak_report"
 	add column "flagged" boolean not null;
 alter table "public"."payamak_report"
-	add column "detected_diagnostics" varchar(255) not null check (detected_diagnostics in ('Important', 'Useful', 'Spam'));
+	add column "detected_diagnostics" varchar(255) not null check (detected_diagnostics in ('Important', 'Useful', 'Unknown', 'Spam'));
 alter table "public"."payamak_report"
-	add column "expected_diagnostics" varchar(255) check (expected_diagnostics in ('Important', 'Useful', 'Spam'));
+	add column "expected_diagnostics" varchar(255) check (expected_diagnostics in ('Important', 'Useful', 'Unknown', 'Spam'));
 alter table "public"."payamak_report"
 	add constraint "uq__payamak_report__global_id" unique ("global_id");
 alter table "public"."payamak_report"
-	add check (decided_diagnostics in ('Important', 'Useful', 'Spam'));
+	add check (decided_diagnostics in ('Important', 'Useful', 'Unknown', 'Spam'));
 create index "ix__payamak_report__state" on "public"."payamak_report" ("state");
 create index "ix__payamak_report__origin" on "public"."payamak_report" ("origin");
 create index "ix__payamak_report__flagged" on "public"."payamak_report" ("flagged");
