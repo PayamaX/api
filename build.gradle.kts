@@ -17,6 +17,20 @@ java {
 }
 
 repositories {
+    mavenLocal()
+    ivy {
+        name = "GitHubReleases"
+        url = uri("https://github.com/HankBenz/spring-schema-migration-generator/releases/download")
+        patternLayout {
+            artifact("[revision]/[artifact]-[revision].[ext]")
+        }
+        metadataSources {
+            artifact()
+        }
+        content {
+            includeGroup("hankbenz")
+        }
+    }
     mavenCentral()
 }
 
@@ -24,6 +38,8 @@ dependencies {
     implementation(libs.spring.boot.starter)
     implementation(libs.spring.boot.starter.data.r2dbc)
     implementation(libs.jakarta.persistence.api)
+    implementation(libs.hibernate.core)
+    implementation("hankbenz:spring-schema-migration-generator:init-261119")
     runtimeOnly(libs.r2dbc.postgresql)
     implementation(libs.spring.boot.starter.flyway)
     runtimeOnly(libs.flyway.database.postgresql)
@@ -38,6 +54,7 @@ dependencies {
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.mockito.kotlin)
     testRuntimeOnly(libs.junit.platform.launcher)
 	runtimeOnly("org.postgresql:postgresql")
 }

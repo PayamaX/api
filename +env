@@ -1,4 +1,4 @@
-PAX_TAG=origin
+PAX_TAG=batch-payamak-report
 PAX_PG_PG_USR=pg
 PAX_PG_PG_PWD=password
 PAX_PG_PG_DB=pg
