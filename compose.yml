@@ -134,6 +134,14 @@ services:
         #       pull_policy:  never
         container_name: pax__api__pg_db
         restart: always
+        environment:
+            - POSTGRES_PASSWORD_FILE=/run/secrets/pg_password
+        secrets:
+            - pg_password
+            - pax_owner_password
+            - pax_ddl_fw_password
+            - pax_dml_api_password
+            - kc_owner_password
         ports:
             - "19111:5432"
         healthcheck:
@@ -147,6 +155,13 @@ services:
         #       pull_policy:  never
         container_name: pax__api__pg_ui
         restart: always
+        secrets:
+            - pgadmin_password
+            - pg_password
+            - pax_owner_password
+            - pax_ddl_fw_password
+            - pax_dml_api_password
+            - kc_owner_password
         ports:
             - "19112:80"
         depends_on:
@@ -158,6 +173,9 @@ services:
         #        pull_policy:  always
         container_name: pax__api__kc_eg
         restart: always
+        secrets:
+            - kc_owner_password
+            - kc_admin_password
         ports:
             - "19113:8080"
         depends_on:
@@ -178,6 +196,8 @@ services:
         #       pull_policy:  never
         container_name: pax__api__os_eg
         restart: always
+        secrets:
+            - opensearch_password
         ports:
             - "19114:8080"
             - "19115:8081"
@@ -195,6 +215,8 @@ services:
         #       pull_policy:  never
         container_name: pax__api__os_ui
         restart: always
+        secrets:
+            - opensearch_password
         ports:
             - "19116:5601"
         depends_on:
@@ -204,7 +226,19 @@ volumes:
     sw_vl:
         name: pax__api__sw_vl
 secrets:
+    pg_password:
+        file: ./.secrets/pg_password
+    pax_owner_password:
+        file: ./.secrets/pax_owner_password
     pax_ddl_fw_password:
-        file: ./secrets/pax_ddl_fw_password
+        file: ./.secrets/pax_ddl_fw_password
     pax_dml_api_password:
-        file: ./secrets/pax_dml_api_password
+        file: ./.secrets/pax_dml_api_password
+    kc_owner_password:
+        file: ./.secrets/kc_owner_password
+    pgadmin_password:
+        file: ./.secrets/pgadmin_password
+    kc_admin_password:
+        file: ./.secrets/kc_admin_password
+    opensearch_password:
+        file: ./.secrets/opensearch_password

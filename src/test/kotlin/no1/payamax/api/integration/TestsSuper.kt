@@ -20,7 +20,9 @@ import org.testcontainers.images.PullPolicy
 import org.testcontainers.lifecycle.Startables
 import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
+import org.testcontainers.utility.MountableFile
 import java.net.ServerSocket
+import java.nio.file.attribute.PosixFilePermission
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -61,9 +63,10 @@ private class BindHostPort(
  * An unset or blank variable is the same as `default`, which is the Testcontainers
  * policy and pulls an image when it is missing locally.
  *
- * `PAX_PG_PAX_DDL_FW_PWD` and `PAX_PG_PAX_DML_API_PWD` are the `pax_ddl_fw` and
- * `pax_dml_api` passwords baked into that database image. An unset or blank
- * variable uses `password`.
+ * `PAX_PG_PAX_OWNER_PWD`, `PAX_PG_PAX_DDL_FW_PWD`, `PAX_PG_PAX_DML_API_PWD`, and
+ * `PAX_PG_KC_OWNER_PWD` are written into secret files and mounted on the database
+ * container. `PAX_PG_KC_OWNER_PWD` and `PAX_KC_ADMIN_PWD` are also mounted on
+ * Keycloak. An unset or blank variable uses `password`.
  *
  * Started once for the test run and kept until the JVM exits, so every test
  * class shares the same database and Keycloak.
@@ -142,6 +145,12 @@ abstract class TestsSuper {
 
 		private val tag = imageTag()
 		private val imagePull = resolveImagePull()
+		private val secretDir: Path = Files.createTempDirectory("pax-pg-secrets")
+		private val ownerSecret = dbSecret("pax_owner_password", "PAX_PG_PAX_OWNER_PWD")
+		private val ddlSecret = dbSecret("pax_ddl_fw_password", "PAX_PG_PAX_DDL_FW_PWD")
+		private val dmlSecret = dbSecret("pax_dml_api_password", "PAX_PG_PAX_DML_API_PWD")
+		private val kcOwnerSecret = dbSecret("kc_owner_password", "PAX_PG_KC_OWNER_PWD")
+		private val kcAdminSecret = dbSecret("kc_admin_password", "PAX_KC_ADMIN_PWD")
 		private val network: Network = Network.newNetwork()
 		private val keycloakPort = freePort()
 		private val http: HttpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()
@@ -153,6 +162,10 @@ abstract class TestsSuper {
 			.withDatabaseName("pg")
 			.withUsername("pg")
 			.withPassword("password")
+			.withCopyFileToContainer(MountableFile.forHostPath(ownerSecret), "/run/secrets/pax_owner_password")
+			.withCopyFileToContainer(MountableFile.forHostPath(ddlSecret), "/run/secrets/pax_ddl_fw_password")
+			.withCopyFileToContainer(MountableFile.forHostPath(dmlSecret), "/run/secrets/pax_dml_api_password")
+			.withCopyFileToContainer(MountableFile.forHostPath(kcOwnerSecret), "/run/secrets/kc_owner_password")
 			.withNetwork(network)
 			.withNetworkAliases("pgdb")
 			.waitingFor(
@@ -173,6 +186,8 @@ abstract class TestsSuper {
 			.withEnv("KC_HOSTNAME_STRICT_HTTPS", "false")
 			.withEnv("KC_PROXY", "none")
 			.withEnv("KC_HTTP_ENABLED", "true")
+			.withCopyFileToContainer(MountableFile.forHostPath(kcOwnerSecret), "/run/secrets/kc_owner_password")
+			.withCopyFileToContainer(MountableFile.forHostPath(kcAdminSecret), "/run/secrets/kc_admin_password")
 			.withExposedPorts(8080)
 			.withCreateContainerCmdModifier(BindHostPort(keycloakPort, 8080))
 			.dependsOn(postgres)
@@ -309,6 +324,23 @@ abstract class TestsSuper {
 
 		private fun dbPassword(name: String): String =
 			System.getenv(name)?.trim()?.takeIf { it.isNotEmpty() } ?: "password"
+
+		private fun dbSecret(fileName: String, env: String): Path {
+			val path = secretDir.resolve(fileName)
+			Files.writeString(path, dbPassword(env))
+			try {
+				Files.setPosixFilePermissions(
+					path,
+					setOf(
+						PosixFilePermission.OWNER_READ,
+						PosixFilePermission.GROUP_READ,
+						PosixFilePermission.OTHERS_READ,
+					),
+				)
+			} catch (_: UnsupportedOperationException) {
+			}
+			return path
+		}
 
 		private fun imageTag(): String {
 			val branch = gitBranch()
