@@ -18,23 +18,43 @@ jobs:
           fetch-depth: 1
 
       - name: Check Workspace token
+        id: workspace
         env:
           WORKSPACE_REPO_TOKEN: ${{ secrets.WORKSPACE_REPO_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
         run: |
           if [ -z "${WORKSPACE_REPO_TOKEN}" ]; then
             echo "::error::Repository secret WORKSPACE_REPO_TOKEN is missing. Create a fine-grained PAT with contents read on PayamaX/Workspace and store it as WORKSPACE_REPO_TOKEN."
             exit 1
           fi
+          if GIT_TERMINAL_PROMPT=0 git -c "http.extraHeader=AUTHORIZATION: bearer ${WORKSPACE_REPO_TOKEN}" \
+            ls-remote --exit-code --heads "${GITHUB_SERVER_URL}/PayamaX/Workspace.git" "refs/heads/${BRANCH}" >/dev/null; then
+            ref="$BRANCH"
+          else
+            status=$?
+            if [ "$status" -eq 2 ]; then
+              ref=main
+            else
+              echo "::error::Could not look up PayamaX/Workspace branch ${BRANCH}."
+              exit "$status"
+            fi
+          fi
+          echo "ref=${ref}" >> "$GITHUB_OUTPUT"
+          echo "Workspace ref: ${ref}"
 
       - name: Checkout Workspace scripts
         uses: actions/checkout@v7
         with:
           repository: PayamaX/Workspace
-          ref: main
+          ref: ${{ steps.workspace.outputs.ref }}
           token: ${{ secrets.WORKSPACE_REPO_TOKEN }}
           path: .payamax-workspace
           persist-credentials: false
           sparse-checkout: .github/scripts
+
+      - name: Load +env
+        run: |
+          cat .payamax-workspace/+env >> $GITHUB_ENV
 
       - name: Resolve PAX_TAG
         run: |
@@ -48,10 +68,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Load +env
-        run: |
-          cat +env >> $GITHUB_ENV
 
       - name: Set up JDK
         uses: actions/setup-java@v6
@@ -116,7 +132,7 @@ jobs:
             PAX_JRE_VER=${{ env.PAX_JRE_VER }}
             PAX_GRD_VER=${{ env.PAX_GRD_VER }}
             PAX_ADMIN_URL=https://admin.gymbo.ir
-            PAX_PG_PAX_DDL_FW_PWD=${{ env.PAX_PG_PAX_DDL_FW_PWD }}
+            PAX_PG_PAX_DDL_FW_PWD=${{ secrets.PAX_PG_PAX_DDL_FW_PWD }}
 
           tags: |
             ghcr.io/${{ env.OWNER_LOWERCASE }}/${{ github.event.repository.name }}-dev:${{ env.PAX_TAG }}

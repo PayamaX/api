@@ -1,5 +1,5 @@
-$envNames = @( & (Join-Path $PSScriptRoot "env.ps1") )
-$paxTag = & (Join-Path (Split-Path -Parent $PSScriptRoot) "scripts" "tag.ps1") -Repo $PSScriptRoot
+$envNames = @( & (Join-Path (Join-Path (Split-Path -Parent $PSScriptRoot) "scripts") "env.ps1") -Repo $PSScriptRoot )
+$paxTag = & (Join-Path (Join-Path (Split-Path -Parent $PSScriptRoot) "scripts") "tag.ps1") -Repo $PSScriptRoot
 
 echo $paxTag
 
