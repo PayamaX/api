@@ -15,7 +15,7 @@ alter table "public"."payamak_report"
 alter table "public"."payamak_report"
 	alter column "body" set data type varchar(4096);
 alter table "public"."payamak_report"
-	add column "sha512" varchar(88);
+	add column "sha512" varchar(128);
 alter table "public"."payamak_report"
 	add column "reporter_user_global_id" uuid;
 alter table "public"."payamak_report"

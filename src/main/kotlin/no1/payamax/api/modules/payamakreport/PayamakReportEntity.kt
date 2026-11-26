@@ -38,7 +38,7 @@ class PayamakReportEntity(
 	@Column(length = 4096)
 	var body: String?,
 
-	@Column(length = 88)
+	@Column(length = 128)
 	var sha512: String?,
 	var reporterUserGlobalId: UUID?,
 
