@@ -61,6 +61,10 @@ private class BindHostPort(
  * An unset or blank variable is the same as `default`, which is the Testcontainers
  * policy and pulls an image when it is missing locally.
  *
+ * `PAX_PG_PAX_DDL_FW_PWD` and `PAX_PG_PAX_DML_API_PWD` are the `pax_ddl_fw` and
+ * `pax_dml_api` passwords baked into that database image. An unset or blank
+ * variable uses `password`.
+ *
  * Started once for the test run and kept until the JVM exits, so every test
  * class shares the same database and Keycloak.
  */
@@ -100,7 +104,8 @@ abstract class TestsSuper {
 		private const val USERNAME = "user@pax.ir"
 		private const val PASSWORD = "password"
 		private const val FLYWAY_USER = "pax_ddl_fw"
-		private const val FLYWAY_PASSWORD = "password"
+		private val FLYWAY_PASSWORD = dbPassword("PAX_PG_PAX_DDL_FW_PWD")
+		private val DML_PASSWORD = dbPassword("PAX_PG_PAX_DML_API_PWD")
 		private val CLEAR_DATABASE = """
 			DO ${'$'}clear${'$'}
 			DECLARE
@@ -200,13 +205,13 @@ abstract class TestsSuper {
 			registry.add("PAX_ADMIN_URL") { "http://localhost:5173" }
 			registry.add("spring.r2dbc.url") { r2dbcUrl("pax") }
 			registry.add("spring.r2dbc.username") { "pax_dml_api" }
-			registry.add("spring.r2dbc.password") { "password" }
+			registry.add("spring.r2dbc.password") { DML_PASSWORD }
 			registry.add("spring.flyway.url") { jdbcUrl("pax") }
 			registry.add("spring.flyway.user") { FLYWAY_USER }
 			registry.add("spring.flyway.password") { FLYWAY_PASSWORD }
 			registry.add("spring.datasource.url") { jdbcUrl("pax") }
 			registry.add("spring.datasource.username") { "pax_dml_api" }
-			registry.add("spring.datasource.password") { "password" }
+			registry.add("spring.datasource.password") { DML_PASSWORD }
 			// Tests must not write Flyway files. The app still does that at startup.
 			registry.add("db.migration.enabled") { "false" }
 		}
@@ -301,6 +306,9 @@ abstract class TestsSuper {
 				)
 			}
 		}
+
+		private fun dbPassword(name: String): String =
+			System.getenv(name)?.trim()?.takeIf { it.isNotEmpty() } ?: "password"
 
 		private fun imageTag(): String {
 			val branch = gitBranch()

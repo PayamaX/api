@@ -86,6 +86,8 @@ jobs:
       - name: Check
         env:
           PAX_TC_PULL_POLICY: always
+          PAX_PG_PAX_DDL_FW_PWD: ${{ secrets.PAX_PG_PAX_DDL_FW_PWD }}
+          PAX_PG_PAX_DML_API_PWD: ${{ secrets.PAX_PG_PAX_DML_API_PWD }}
         run: bash ./gradlew check
 
       - name: Build
