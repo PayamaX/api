@@ -42,11 +42,11 @@ services:
             - SPRING_DATASOURCE_URL=jdbc:postgresql://pgdb:5432/pax
             - PAX_ADMIN_URL=${PAX_ADMIN_URL}
         secrets:
-            - source: pax_ddl_fw_password
+            - source: pg_pax_ddl_fw_password
               target: spring.flyway.password
-            - source: pax_dml_api_password
+            - source: pg_pax_dml_api_password
               target: spring.datasource.password
-            - source: pax_dml_api_password
+            - source: pg_pax_dml_api_password
               target: spring.r2dbc.password
         volumes:
             - ./assets/tls/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
@@ -138,10 +138,10 @@ services:
             - POSTGRES_PASSWORD_FILE=/run/secrets/pg_password
         secrets:
             - pg_password
-            - pax_owner_password
-            - pax_ddl_fw_password
-            - pax_dml_api_password
-            - kc_owner_password
+            - pg_pax_owner_password
+            - pg_pax_ddl_fw_password
+            - pg_pax_dml_api_password
+            - pg_kc_owner_password
         ports:
             - "19111:5432"
         healthcheck:
@@ -158,10 +158,10 @@ services:
         secrets:
             - pgadmin_password
             - pg_password
-            - pax_owner_password
-            - pax_ddl_fw_password
-            - pax_dml_api_password
-            - kc_owner_password
+            - pg_pax_owner_password
+            - pg_pax_ddl_fw_password
+            - pg_pax_dml_api_password
+            - pg_kc_owner_password
         ports:
             - "19112:80"
         depends_on:
@@ -174,7 +174,7 @@ services:
         container_name: pax__api__kc_eg
         restart: always
         secrets:
-            - kc_owner_password
+            - pg_kc_owner_password
             - kc_admin_password
         ports:
             - "19113:8080"
@@ -228,14 +228,14 @@ volumes:
 secrets:
     pg_password:
         file: ./.secrets/pg_password
-    pax_owner_password:
-        file: ./.secrets/pax_owner_password
-    pax_ddl_fw_password:
-        file: ./.secrets/pax_ddl_fw_password
-    pax_dml_api_password:
-        file: ./.secrets/pax_dml_api_password
-    kc_owner_password:
-        file: ./.secrets/kc_owner_password
+    pg_pax_owner_password:
+        file: ./.secrets/pg_pax_owner_password
+    pg_pax_ddl_fw_password:
+        file: ./.secrets/pg_pax_ddl_fw_password
+    pg_pax_dml_api_password:
+        file: ./.secrets/pg_pax_dml_api_password
+    pg_kc_owner_password:
+        file: ./.secrets/pg_kc_owner_password
     pgadmin_password:
         file: ./.secrets/pgadmin_password
     kc_admin_password:
