@@ -9,7 +9,7 @@ alter table "public"."payamak_report"
 alter table "public"."payamak_report"
 	add column "state" varchar(255) not null check (state in ('PENDING', 'REVIEWED', 'POSTPONED'));
 alter table "public"."payamak_report"
-	alter column "origin" set data type varchar(16);
+	alter column "origin" set data type varchar(32);
 alter table "public"."payamak_report"
 	alter column "origin" set not null;
 alter table "public"."payamak_report"
@@ -54,7 +54,7 @@ alter table "public"."payamak_report_rule_process_result"
 	add constraint "fk__payamak_report_rule_process_result__payamak_report_id" foreign key ("payamak_report_id") references "public"."payamak_report" ("id");
 create index "ix__payamak_report_rule_process_result__payamak_report_id" on "public"."payamak_report_rule_process_result" ("payamak_report_id");
 alter table "public"."ranked_origin"
-	alter column "origin" set data type varchar(16);
+	alter column "origin" set data type varchar(32);
 alter table "public"."ranked_origin"
 	alter column "rank" set data type float4;
 alter table "public"."ranked_origin"

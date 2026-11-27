@@ -34,7 +34,7 @@ class RankedOriginEntity(
 	var updated: Instant,
 	var deleted: Instant?,
 
-	@Column(length = 16)
+	@Column(length = 32)
 	var origin: String,
 	var rank: Float,
 	var ownerGlobalId: UUID?,

@@ -32,7 +32,7 @@ class PayamakReportEntity(
 	override var globalId: UUID,
 	@Enumerated(EnumType.STRING) var state: PayamakReportStates,
 
-	@Column(length = 16)
+	@Column(length = 32)
 	var origin: String,
 
 	@Column(length = 4096)

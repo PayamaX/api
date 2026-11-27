@@ -5,7 +5,7 @@ import java.util.*
 
 data class RankedOriginProtectedInput(
 	val globalId: UUID?,
-	@Length(max = 16) val origin: String,
+	@Length(max = 32) val origin: String,
 	val rank: Float,
 	val ownerGlobalId: UUID?,
 	val position: Int,
