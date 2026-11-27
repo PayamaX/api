@@ -6,17 +6,22 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
+            additional_contexts:
+                mavenlocal: ${HOME:-${USERPROFILE}}/.m2x
             args:
                 PAX_JDK_VER: ${PAX_JDK_VER}
                 PAX_JRE_VER: ${PAX_JRE_VER}
                 PAX_GRD_VER: ${PAX_GRD_VER}
-                PAX_PG_PAX_DDL_FW_PWD: ${PAX_PG_PAX_DDL_FW_PWD}
         container_name: pax__api__api
         restart: always
         ports:
             - "19100:8080"
         healthcheck:
-            test: [ "CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n\" >&3 && head -n 1 <&3'"]
+            test:
+                [
+                    "CMD-SHELL",
+                    "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n\" >&3 && head -n 1 <&3'",
+                ]
             interval: 30s
             timeout: 10s
             retries: 5
@@ -31,12 +36,18 @@ services:
         environment:
             - StorageConfig__AccessKey=FILE_S3_KEY
             - StorageConfig__SecretKey=SECRET33
+            - SPRING_CONFIG_IMPORT=optional:configtree:/run/secrets/
             - SPRING_FLYWAY_URL=jdbc:postgresql://pgdb:5432/pax
             - SPRING_FLYWAY_USER=pax_ddl_fw
-            - SPRING_FLYWAY_PASSWORD=${PAX_PG_PAX_DDL_FW_PWD}
             - SPRING_DATASOURCE_URL=jdbc:postgresql://pgdb:5432/pax
-            - PAX_PG_PAX_DDL_FW_PWD=${PAX_PG_PAX_DDL_FW_PWD}
             - PAX_ADMIN_URL=${PAX_ADMIN_URL}
+        secrets:
+            - source: pg_pax_ddl_fw_password
+              target: spring.flyway.password
+            - source: pg_pax_dml_api_password
+              target: spring.datasource.password
+            - source: pg_pax_dml_api_password
+              target: spring.r2dbc.password
         volumes:
             - ./assets/tls/root-ca.pem:/usr/share/opensearch/config/root-ca.pem
             - ./assets/tls/client.pem:/usr/share/opensearch/config/client.pem
@@ -45,7 +56,7 @@ services:
     pax_admin:
         image: ghcr.io/payamax/admin-go:${PAX_TAG}
         hostname: pax-admin
-        container_name: pax__api__pax_ad
+        container_name: pax__api__admin
         restart: always
         depends_on:
             pax_api:
@@ -53,22 +64,26 @@ services:
         ports:
             - "19101:80"
         healthcheck:
-            test: [ "CMD-SHELL", "wget -q -O /dev/null http://localhost/ || exit 1" ]
+            test:
+                [
+                    "CMD-SHELL",
+                    "wget -q -O /dev/null http://localhost/ || exit 1",
+                ]
             interval: 30s
             timeout: 10s
             retries: 3
             start_period: 10s
-    
+
     sw-mt:
         image: chrislusf/seaweedfs:latest
-#       pull_policy:  never
+        #       pull_policy:  never
         container_name: pax__api__sw_master
         hostname: pax-sw-master
         command: master
-    
+
     sw-vl:
         image: chrislusf/seaweedfs:latest
-#       pull_policy:  never
+        #       pull_policy:  never
         container_name: pax__api__sw_volume
         hostname: pax-sw-volume
         command: volume -mserver=sw-mt:9333 -dir=/data
@@ -76,19 +91,19 @@ services:
             - sw-mt
         volumes:
             - sw_vl:/data
-    
+
     sw-fl:
         image: chrislusf/seaweedfs:latest
-#       pull_policy:  never
+        #       pull_policy:  never
         container_name: pax__api__sw_filer
         hostname: pax-sw-filer
         command: filer -master=sw-mt:9333
         depends_on:
             - sw-mt
-    
+
     sw-s3:
         image: chrislusf/seaweedfs:latest
-#       pull_policy:  never
+        #       pull_policy:  never
         container_name: pax__api__sw_s3
         hostname: pax-sw-s3
         command: s3 -filer=sw-fl:8888
@@ -99,10 +114,10 @@ services:
             - "8333"
         depends_on:
             - sw-fl
-    
+
     nginx:
         image: ghcr.io/payamax/nginx-go:${PAX_TAG}
-#       pull_policy:  never
+        #       pull_policy:  never
         container_name: pax__api__nginx
         restart: always
         ports:
@@ -116,22 +131,37 @@ services:
 
     pgdb:
         image: ghcr.io/payamax/pgxdb-go:${PAX_TAG}
-#       pull_policy:  never
+        #       pull_policy:  never
         container_name: pax__api__pg_db
         restart: always
+        environment:
+            - POSTGRES_PASSWORD_FILE=/run/secrets/pg_password
+        secrets:
+            - pg_password
+            - pg_pax_owner_password
+            - pg_pax_ddl_fw_password
+            - pg_pax_dml_api_password
+            - pg_kc_owner_password
         ports:
             - "19111:5432"
         healthcheck:
-            test: [ "CMD-SHELL", "pg_isready -U pg -d pax" ]
+            test: ["CMD-SHELL", "pg_isready -U pg -d pax"]
             interval: 5s
             timeout: 5s
             retries: 5
 
     pgui:
         image: ghcr.io/payamax/pgxui-go:${PAX_TAG}
-#       pull_policy:  never
+        #       pull_policy:  never
         container_name: pax__api__pg_ui
         restart: always
+        secrets:
+            - pgadmin_password
+            - pg_password
+            - pg_pax_owner_password
+            - pg_pax_ddl_fw_password
+            - pg_pax_dml_api_password
+            - pg_kc_owner_password
         ports:
             - "19112:80"
         depends_on:
@@ -140,9 +170,12 @@ services:
 
     kc:
         image: ghcr.io/payamax/kcxkc-go:${PAX_TAG}
-#        pull_policy:  always
+        #        pull_policy:  always
         container_name: pax__api__kc_eg
         restart: always
+        secrets:
+            - pg_kc_owner_password
+            - kc_admin_password
         ports:
             - "19113:8080"
         depends_on:
@@ -150,19 +183,21 @@ services:
                 condition: service_healthy
         healthcheck:
             test:
-              [
-                  "CMD-SHELL",
-                  "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;if [ $? -eq 0 ]; then echo 'Healthcheck Successful';exit 0;else echo 'Healthcheck Failed';exit 1;fi;",
-              ]
+                [
+                    "CMD-SHELL",
+                    "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;if [ $? -eq 0 ]; then echo 'Healthcheck Successful';exit 0;else echo 'Healthcheck Failed';exit 1;fi;",
+                ]
             interval: 30s
             timeout: 10s
             retries: 5
             start_period: 60s
     oseg:
         image: ghcr.io/payamax/osxeg-go:${PAX_TAG}
-#       pull_policy:  never
+        #       pull_policy:  never
         container_name: pax__api__os_eg
         restart: always
+        secrets:
+            - opensearch_password
         ports:
             - "19114:8080"
             - "19115:8081"
@@ -170,16 +205,18 @@ services:
             pgdb:
                 condition: service_healthy
         healthcheck:
-            test: [ "CMD", "curl", "-k", "https://localhost:9200" ]
+            test: ["CMD", "curl", "-k", "https://localhost:9200"]
             interval: 30s
             timeout: 10s
             retries: 12
             start_period: 60s
     osui:
         image: ghcr.io/payamax/osxui-go:${PAX_TAG}
-#       pull_policy:  never
+        #       pull_policy:  never
         container_name: pax__api__os_ui
         restart: always
+        secrets:
+            - opensearch_password
         ports:
             - "19116:5601"
         depends_on:
@@ -188,3 +225,20 @@ services:
 volumes:
     sw_vl:
         name: pax__api__sw_vl
+secrets:
+    pg_password:
+        file: ./.secrets/pg_password
+    pg_pax_owner_password:
+        file: ./.secrets/pg_pax_owner_password
+    pg_pax_ddl_fw_password:
+        file: ./.secrets/pg_pax_ddl_fw_password
+    pg_pax_dml_api_password:
+        file: ./.secrets/pg_pax_dml_api_password
+    pg_kc_owner_password:
+        file: ./.secrets/pg_kc_owner_password
+    pgadmin_password:
+        file: ./.secrets/pgadmin_password
+    kc_admin_password:
+        file: ./.secrets/kc_admin_password
+    opensearch_password:
+        file: ./.secrets/opensearch_password

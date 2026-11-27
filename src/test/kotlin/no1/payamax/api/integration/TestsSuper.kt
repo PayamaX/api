@@ -1,0 +1,381 @@
+package no1.payamax.api.integration
+
+import com.github.dockerjava.api.command.CreateContainerCmd
+import com.github.dockerjava.api.model.HostConfig
+import com.github.dockerjava.api.model.PortBinding
+import org.junit.jupiter.api.BeforeEach
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.RequestBuilder
+import org.springframework.test.web.servlet.ResultActions
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
+import org.testcontainers.containers.GenericContainer
+import java.sql.DriverManager
+import org.testcontainers.containers.Network
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.images.ImagePullPolicy
+import org.testcontainers.images.PullPolicy
+import org.testcontainers.lifecycle.Startables
+import org.testcontainers.postgresql.PostgreSQLContainer
+import org.testcontainers.utility.DockerImageName
+import org.testcontainers.utility.MountableFile
+import java.net.ServerSocket
+import java.nio.file.attribute.PosixFilePermission
+import java.net.URI
+import java.net.URLEncoder
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Duration
+import java.util.function.Consumer
+
+private object NeverPull : ImagePullPolicy {
+	override fun shouldPull(imageName: DockerImageName): Boolean = false
+}
+
+private class ImagePull(
+	val policy: ImagePullPolicy,
+	val description: String,
+)
+
+private class BindHostPort(
+	private val hostPort: Int,
+	private val containerPort: Int,
+) : Consumer<CreateContainerCmd> {
+	override fun accept(cmd: CreateContainerCmd) {
+		val hostConfig = cmd.hostConfig ?: HostConfig.newHostConfig()
+		cmd.withHostConfig(hostConfig.withPortBindings(PortBinding.parse("$hostPort:$containerPort")))
+	}
+}
+
+/**
+ * Postgres and Keycloak from the services images (`ghcr.io/payamax/pgxdb-go` and
+ * `ghcr.io/payamax/kcxkc-go`). On the `main` branch the tag is always `main`.
+ * Otherwise it is `PAX_TAG` from the environment, then from the nearest `.env`
+ * in the current directory or its ancestors, and finally the current git branch.
+ *
+ * `PAX_TC_PULL_POLICY` selects the image pull policy: `always`, `never`, or `default`.
+ * An unset or blank variable is the same as `default`, which is the Testcontainers
+ * policy and pulls an image when it is missing locally.
+ *
+ * `PAX_PG_PAX_OWNER_PWD`, `PAX_PG_PAX_DDL_FW_PWD`, `PAX_PG_PAX_DML_API_PWD`, and
+ * `PAX_PG_KC_OWNER_PWD` are written into secret files and mounted on the database
+ * container. `PAX_PG_KC_OWNER_PWD` and `PAX_KC_ADMIN_PWD` are also mounted on
+ * Keycloak. An unset or blank variable uses `password`.
+ *
+ * Started once for the test run and kept until the JVM exits, so every test
+ * class shares the same database and Keycloak.
+ */
+abstract class TestsSuper {
+	protected fun readerToken(): String = accessToken(REALM, TRUSTED_CLIENT, USERNAME, PASSWORD)
+
+	protected fun untrustedToken(): String = accessToken(REALM, UNTRUSTED_CLIENT, USERNAME, PASSWORD)
+
+	protected val uuidPattern = "[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}"
+
+	@field:Autowired
+	protected lateinit var mockMvc: MockMvc
+
+	protected fun exchange(request: RequestBuilder): ResultActions {
+		val actions = mockMvc.perform(request)
+		val result = actions.andReturn()
+		return if (result.request.isAsyncStarted) mockMvc.perform(asyncDispatch(result)) else actions
+	}
+
+	/**
+	 * Empties every application table and restarts every sequence in `public` and `audit`.
+	 * `flyway_schema_history` stays so later tests still see the applied migrations.
+	 */
+	@BeforeEach
+	protected fun clearDatabase() {
+		DriverManager.getConnection(jdbcUrl("pax"), FLYWAY_USER, FLYWAY_PASSWORD).use { connection ->
+			connection.createStatement().use { statement ->
+				statement.execute(CLEAR_DATABASE)
+			}
+		}
+	}
+
+	companion object {
+		private const val REALM = "pax"
+		private const val TRUSTED_CLIENT = "SwaggerUI"
+		private const val UNTRUSTED_CLIENT = "admin-cli"
+		private const val USERNAME = "user@pax.ir"
+		private const val PASSWORD = "password"
+		private const val FLYWAY_USER = "pax_ddl_fw"
+		private val FLYWAY_PASSWORD = dbPassword("PAX_PG_PAX_DDL_FW_PWD")
+		private val DML_PASSWORD = dbPassword("PAX_PG_PAX_DML_API_PWD")
+		private val CLEAR_DATABASE = """
+			DO ${'$'}clear${'$'}
+			DECLARE
+				tables text;
+				seq record;
+			BEGIN
+				SELECT string_agg(format('%I.%I', n.nspname, c.relname), ', ')
+				INTO tables
+				FROM pg_class c
+				JOIN pg_namespace n ON n.oid = c.relnamespace
+				WHERE c.relkind = 'r'
+					AND n.nspname IN ('public', 'audit')
+					AND c.relname <> 'flyway_schema_history'
+					AND pg_get_userbyid(c.relowner) = current_user;
+
+				IF tables IS NOT NULL THEN
+					EXECUTE 'TRUNCATE TABLE ' || tables || ' RESTART IDENTITY CASCADE';
+				END IF;
+
+				FOR seq IN
+					SELECT n.nspname AS schema_name, c.relname AS sequence_name
+					FROM pg_class c
+					JOIN pg_namespace n ON n.oid = c.relnamespace
+					WHERE c.relkind = 'S'
+						AND n.nspname IN ('public', 'audit')
+						AND pg_get_userbyid(c.relowner) = current_user
+				LOOP
+					EXECUTE format('ALTER SEQUENCE %I.%I RESTART', seq.schema_name, seq.sequence_name);
+				END LOOP;
+			END
+			${'$'}clear${'$'};
+		""".trimIndent()
+		private val DOTENV_PAX_TAG = Regex("""(?:export\s+)?PAX_TAG\s*=\s*(.*)""")
+
+		private val tag = imageTag()
+		private val imagePull = resolveImagePull()
+		private val secretDir: Path = Files.createTempDirectory("pax-pg-secrets")
+		private val ownerSecret = dbSecret("pg_pax_owner_password", "PAX_PG_PAX_OWNER_PWD")
+		private val ddlSecret = dbSecret("pg_pax_ddl_fw_password", "PAX_PG_PAX_DDL_FW_PWD")
+		private val dmlSecret = dbSecret("pg_pax_dml_api_password", "PAX_PG_PAX_DML_API_PWD")
+		private val kcOwnerSecret = dbSecret("pg_kc_owner_password", "PAX_PG_KC_OWNER_PWD")
+		private val kcAdminSecret = dbSecret("kc_admin_password", "PAX_KC_ADMIN_PWD")
+		private val network: Network = Network.newNetwork()
+		private val keycloakPort = freePort()
+		private val http: HttpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()
+
+		private val postgres: PostgreSQLContainer = PostgreSQLContainer(
+			DockerImageName.parse("ghcr.io/payamax/pgxdb-go:$tag").asCompatibleSubstituteFor("postgres"),
+		)
+			.withImagePullPolicy(imagePull.policy)
+			.withDatabaseName("pg")
+			.withUsername("pg")
+			.withPassword("password")
+			.withCopyFileToContainer(MountableFile.forHostPath(ownerSecret), "/run/secrets/pg_pax_owner_password")
+			.withCopyFileToContainer(MountableFile.forHostPath(ddlSecret), "/run/secrets/pg_pax_ddl_fw_password")
+			.withCopyFileToContainer(MountableFile.forHostPath(dmlSecret), "/run/secrets/pg_pax_dml_api_password")
+			.withCopyFileToContainer(MountableFile.forHostPath(kcOwnerSecret), "/run/secrets/pg_kc_owner_password")
+			.withNetwork(network)
+			.withNetworkAliases("pgdb")
+			.waitingFor(
+				Wait
+					.forLogMessage(".*Flyway completed\\..*", 1)
+					.withStartupTimeout(Duration.ofMinutes(3)),
+			)
+
+		private val keycloak: GenericContainer<*> = GenericContainer(
+			DockerImageName.parse("ghcr.io/payamax/kcxkc-go:$tag"),
+		)
+			.withImagePullPolicy(imagePull.policy)
+			.withNetwork(network)
+			.withImagePullPolicy(PullPolicy.defaultPolicy())
+			.withEnv("KC_HOSTNAME", "localhost")
+			.withEnv("KC_HOSTNAME_PORT", keycloakPort.toString())
+			.withEnv("KC_HOSTNAME_STRICT", "false")
+			.withEnv("KC_HOSTNAME_STRICT_HTTPS", "false")
+			.withEnv("KC_PROXY", "none")
+			.withEnv("KC_HTTP_ENABLED", "true")
+			.withCopyFileToContainer(MountableFile.forHostPath(kcOwnerSecret), "/run/secrets/pg_kc_owner_password")
+			.withCopyFileToContainer(MountableFile.forHostPath(kcAdminSecret), "/run/secrets/kc_admin_password")
+			.withExposedPorts(8080)
+			.withCreateContainerCmdModifier(BindHostPort(keycloakPort, 8080))
+			.dependsOn(postgres)
+			.waitingFor(
+				Wait
+					.forHttp("/health/ready")
+					.forPort(8080)
+					.forStatusCode(200)
+					.withStartupTimeout(Duration.ofMinutes(3)),
+			)
+
+		init {
+			try {
+				Startables.deepStart(postgres, keycloak).join()
+			} catch (failure: Throwable) {
+				throw IllegalStateException(startupFailure(failure), failure)
+			}
+		}
+
+		@DynamicPropertySource
+		@JvmStatic
+		fun containerProperties(registry: DynamicPropertyRegistry) {
+			val issuer = "${authServerUrl()}/realms/$REALM"
+			registry.add("oauth2.public-realm-url") { issuer }
+			registry.add("oauth2.private-realm-url") { issuer }
+			registry.add("oauth2.health-url") { "${authServerUrl()}/health/ready" }
+			registry.add("oauth2.issuers[0]") { issuer }
+			registry.add("oauth2.requires-secure-metadata") { "false" }
+			registry.add("http-log.enabled") { "false" }
+			registry.add("PAX_ADMIN_URL") { "http://localhost:5173" }
+			registry.add("spring.r2dbc.url") { r2dbcUrl("pax") }
+			registry.add("spring.r2dbc.username") { "pax_dml_api" }
+			registry.add("spring.r2dbc.password") { DML_PASSWORD }
+			registry.add("spring.flyway.url") { jdbcUrl("pax") }
+			registry.add("spring.flyway.user") { FLYWAY_USER }
+			registry.add("spring.flyway.password") { FLYWAY_PASSWORD }
+			registry.add("spring.datasource.url") { jdbcUrl("pax") }
+			registry.add("spring.datasource.username") { "pax_dml_api" }
+			registry.add("spring.datasource.password") { DML_PASSWORD }
+			// Tests must not write Flyway files. The app still does that at startup.
+			registry.add("db.migration.enabled") { "false" }
+		}
+
+		private fun accessToken(realm: String, clientId: String, username: String, password: String): String {
+			val body = listOf(
+				"grant_type" to "password",
+				"client_id" to clientId,
+				"username" to username,
+				"password" to password,
+			).joinToString("&") { (key, value) -> "$key=${encode(value)}" }
+			val request = HttpRequest.newBuilder(URI.create("${authServerUrl()}/realms/$realm/protocol/openid-connect/token"))
+				.header("Content-Type", "application/x-www-form-urlencoded")
+				.timeout(Duration.ofSeconds(20))
+				.POST(HttpRequest.BodyPublishers.ofString(body))
+				.build()
+			val response = http.send(request, HttpResponse.BodyHandlers.ofString())
+			if (response.statusCode() !in 200..299) {
+				throw IllegalStateException(
+					"Token request for client $clientId on realm $realm failed with ${response.statusCode()}: ${response.body()}",
+				)
+			}
+			return Regex(""""access_token"\s*:\s*"([^"]+)"""").find(response.body())?.groupValues?.get(1)
+				?: throw IllegalStateException("Token response for client $clientId did not include access_token.")
+		}
+
+		private fun authServerUrl(): String = "http://localhost:$keycloakPort"
+
+		private fun jdbcUrl(database: String): String =
+			"jdbc:postgresql://${postgres.host}:${postgres.getMappedPort(5432)}/$database"
+
+		private fun r2dbcUrl(database: String): String =
+			"r2dbc:postgresql://${postgres.host}:${postgres.getMappedPort(5432)}/$database"
+
+		private fun encode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8)
+
+		private fun freePort(): Int = ServerSocket(0).use { it.localPort }
+
+		private fun startupFailure(failure: Throwable): String {
+			val postgresImage = "ghcr.io/payamax/pgxdb-go:$tag"
+			val keycloakImage = "ghcr.io/payamax/kcxkc-go:$tag"
+			return buildString {
+				appendLine("Failed to start the Postgres and Keycloak containers used by tests.")
+				appendLine("Postgres image: $postgresImage (${localImage(postgresImage)})")
+				appendLine("Keycloak image: $keycloakImage (${localImage(keycloakImage)})")
+				appendLine("Pull policy: ${imagePull.description}")
+				append(causeChain(failure))
+			}
+		}
+
+		private fun localImage(image: String): String = runCatching {
+			val process = ProcessBuilder("docker", "image", "inspect", "--format", "{{.Id}}", image)
+				.redirectErrorStream(true)
+				.start()
+			val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
+			if (process.waitFor() == 0 && output.isNotEmpty()) "present locally" else "not present locally: $output"
+		}.getOrElse { error -> "could not inspect: ${error.javaClass.simpleName}: ${error.message}" }
+
+		private fun causeChain(failure: Throwable): String {
+			val seen = mutableSetOf<Throwable>()
+			val lines = mutableListOf<String>()
+			var current: Throwable? = failure
+			while (current != null && seen.add(current)) {
+				val frame = current.stackTrace.firstOrNull()
+				val where = if (frame == null) "" else " (${frame.fileName}:${frame.lineNumber})"
+				lines += "${current.javaClass.name}$where: ${current.message}"
+				current = current.cause
+			}
+			return lines.joinToString(separator = "\n")
+		}
+
+		private fun resolveImagePull(): ImagePull {
+			val configured = System.getenv("PAX_TC_PULL_POLICY")?.trim().orEmpty()
+			return when (configured.lowercase()) {
+				"", "default" -> ImagePull(
+					PullPolicy.defaultPolicy(),
+					"default. Testcontainers pulls an image when it is missing locally.",
+				)
+
+				"always" -> ImagePull(
+					PullPolicy.alwaysPull(),
+					"always. Testcontainers pulls an image even when a local copy exists.",
+				)
+
+				"never" -> ImagePull(
+					NeverPull,
+					"never. Testcontainers does not pull, so a missing image fails while creating the container.",
+				)
+
+				else -> throw IllegalArgumentException(
+					"PAX_TC_PULL_POLICY must be always, never, or default (got \"$configured\").",
+				)
+			}
+		}
+
+		private fun dbPassword(name: String): String =
+			System.getenv(name)?.trim()?.takeIf { it.isNotEmpty() } ?: "password"
+
+		private fun dbSecret(fileName: String, env: String): Path {
+			val path = secretDir.resolve(fileName)
+			Files.writeString(path, dbPassword(env))
+			try {
+				Files.setPosixFilePermissions(
+					path,
+					setOf(
+						PosixFilePermission.OWNER_READ,
+						PosixFilePermission.GROUP_READ,
+						PosixFilePermission.OTHERS_READ,
+					),
+				)
+			} catch (_: UnsupportedOperationException) {
+			}
+			return path
+		}
+
+		private fun imageTag(): String {
+			val branch = gitBranch()
+			if (branch == "main") return "main"
+
+			dotEnvTag()?.let { return it }
+			System.getenv("PAX_TAG")?.trim()?.takeIf { it.isNotBlank() }?.let { return it }
+			return branch.takeIf { it.isNotBlank() }
+				?: throw IllegalStateException("PAX_TAG is not set and the current git branch could not be determined.")
+		}
+
+		private fun dotEnvTag(): String? = generateSequence(Path.of("").toAbsolutePath().normalize()) { it.parent }
+			.map { it.resolve(".env") }.firstNotNullOfOrNull(::dotEnvTagFrom)
+
+		private fun dotEnvTagFrom(path: Path): String? = runCatching {
+			if (!Files.isRegularFile(path)) return@runCatching null
+
+			Files.newBufferedReader(path).useLines { lines ->
+				lines.firstNotNullOfOrNull { line ->
+					val match = DOTENV_PAX_TAG.matchEntire(line.trim()) ?: return@firstNotNullOfOrNull null
+					match.groupValues[1]
+						.trim()
+						.removeSurrounding("\"")
+						.removeSurrounding("'")
+						.takeIf { it.isNotBlank() }
+				}
+			}
+		}.getOrNull()
+
+		private fun gitBranch(): String = runCatching {
+			val process = ProcessBuilder("git", "branch", "--show-current")
+				.redirectError(ProcessBuilder.Redirect.DISCARD)
+				.start()
+			val branch = process.inputStream.bufferedReader().use { it.readText() }.trim()
+			if (process.waitFor() == 0) branch else ""
+		}.getOrDefault("")
+	}
+}

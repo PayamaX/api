@@ -17,6 +17,20 @@ java {
 }
 
 repositories {
+    mavenLocal()
+    ivy {
+        name = "GitHubReleases"
+        url = uri("https://github.com/HankBenz/spring-schema-migration-generator/releases/download")
+        patternLayout {
+            artifact("[revision]/[artifact]-[revision].[ext]")
+        }
+        metadataSources {
+            artifact()
+        }
+        content {
+            includeGroup("hankbenz")
+        }
+    }
     mavenCentral()
 }
 
@@ -24,6 +38,8 @@ dependencies {
     implementation(libs.spring.boot.starter)
     implementation(libs.spring.boot.starter.data.r2dbc)
     implementation(libs.jakarta.persistence.api)
+    implementation(libs.hibernate.core)
+    implementation("hankbenz:spring-schema-migration-generator:init-261127")
     runtimeOnly(libs.r2dbc.postgresql)
     implementation(libs.spring.boot.starter.flyway)
     runtimeOnly(libs.flyway.database.postgresql)
@@ -38,6 +54,7 @@ dependencies {
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.mockito.kotlin)
     testRuntimeOnly(libs.junit.platform.launcher)
 	runtimeOnly("org.postgresql:postgresql")
 }
@@ -53,6 +70,11 @@ kotlin {
     }
 }
 
+tasks.named<Test>("test") {
+    // Remove the previous report first, so check cannot succeed on a stale result.
+    dependsOn("cleanTest")
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
     testLogging {
@@ -61,4 +83,16 @@ tasks.withType<Test> {
         showCauses = true
         showStackTraces = true
     }
+    addTestListener(object : TestListener {
+        override fun beforeSuite(suite: TestDescriptor) {}
+        override fun afterSuite(suite: TestDescriptor, result: TestResult) {
+            if (suite.parent == null) {
+                logger.lifecycle(
+                    "Test results: ${result.testCount} tests, ${result.successfulTestCount} succeeded, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped",
+                )
+            }
+        }
+        override fun beforeTest(testDescriptor: TestDescriptor) {}
+        override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {}
+    })
 }

@@ -1,27 +1,43 @@
 package no1.payamax.api.modules.rankedorigin
 
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.Index
+import jakarta.persistence.Id as JpaId
 import jakarta.persistence.Table as JpaTable
 import jakarta.persistence.UniqueConstraint
-import no1.payamax.api.config.http.r2dbc.Sequenced
+import no1.payamax.api.config.r2dbc.Sequenced
+import org.hibernate.annotations.ColumnDefault
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
 import java.time.Instant
 import java.util.UUID
 
-@JpaTable(uniqueConstraints = [
-	UniqueConstraint(name = "uq__ranked_origin__global_id", columnNames = ["global_id"]),
-	UniqueConstraint(name = "uq__ranked_origin__origin", columnNames = ["origin"]),
-])
+@Entity
+@JpaTable(
+	uniqueConstraints = [
+		UniqueConstraint(name = "uq__ranked_origin__global_id", columnNames = ["global_id"]),
+		UniqueConstraint(name = "uq__ranked_origin__origin", columnNames = ["origin"]),
+	],
+	indexes = [
+		Index("ix__ranked_origin__owner_global_id", columnList = "owner_global_id"),
+		Index("ix__ranked_origin__position", columnList = "position"),
+	],
+)
 @Table
 class RankedOriginEntity(
+	@JpaId
 	@Id
+	@ColumnDefault("nextval('id')")
 	override var id: Long? = null,
 	override var globalId: UUID,
 	var updated: Instant,
 	var deleted: Instant?,
+
+	@Column(length = 32)
 	var origin: String,
-	var rank: Double,
+	var rank: Float,
 	var ownerGlobalId: UUID?,
 	var position: Int,
-	var comment: String? = null,
+	@Column(length = 512) var comment: String? = null,
 ) : Sequenced

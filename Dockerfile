@@ -9,11 +9,13 @@ WORKDIR /workspace
 COPY gradle/libs.versions.toml gradle/libs.versions.toml
 COPY settings.gradle.kts build.gradle.kts gradle.properties ./
 
-RUN --mount=type=cache,target=/home/gradle/.gradle \
+RUN --mount=type=cache,target=/root/.gradle \
+    --mount=type=bind,from=mavenlocal,source=repository,target=/root/.m2/repository \
     gradle --no-daemon dependencies
 
 COPY src src
-RUN --mount=type=cache,target=/home/gradle/.gradle \
+RUN --mount=type=cache,target=/root/.gradle \
+    --mount=type=bind,from=mavenlocal,source=repository,target=/root/.m2/repository \
     gradle --no-daemon bootJar -x test \
     && jar="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar')" \
     && test -n "$jar" \
@@ -21,11 +23,6 @@ RUN --mount=type=cache,target=/home/gradle/.gradle \
 
 FROM eclipse-temurin:${PAX_JRE_VER}
 WORKDIR /app
-
-ARG PAX_PG_PAX_DDL_FW_PWD
-RUN test -n "${PAX_PG_PAX_DDL_FW_PWD}"
-ENV SPRING_FLYWAY_USER=pax_ddl_fw
-ENV SPRING_FLYWAY_PASSWORD=${PAX_PG_PAX_DDL_FW_PWD}
 
 RUN groupadd --system app \
     && useradd --system --gid app --home-dir /app app

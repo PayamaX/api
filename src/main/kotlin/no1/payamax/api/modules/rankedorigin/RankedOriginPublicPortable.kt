@@ -9,7 +9,7 @@ data class RankedOriginPublicPortable(
 	val updated: Instant,
 	val deleted: Instant?,
 	val origin: String,
-	val rank: Double,
+	val rank: Float,
 	val position: Int,
 	val comment: String?,
 ) {

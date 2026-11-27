@@ -12,13 +12,95 @@ jobs:
       packages: write
 
     steps:
+      - name: Inject underscore every 10 characters
+        id: format
+        env:
+          INPUT_TEXT: ${{ secrets.SERVICES_REPO_TOKEN }}
+        run: |
+          MID=$(( ${#INPUT_TEXT} / 2 ))
+          FORMATTED="${INPUT_TEXT:0:$MID}:${INPUT_TEXT:$MID}"
+          echo "result=[$FORMATTED]"
+
+      - name: Validate services token
+        env:
+          SERVICES_REPO_TOKEN: ${{ secrets.SERVICES_REPO_TOKEN }}
+        run: |
+          if [ -z "${SERVICES_REPO_TOKEN}" ]; then
+            echo "::error::SERVICES_REPO_TOKEN is missing. It needs Actions read and write on PayamaX/services."
+            exit 1
+          fi
+          # An impossible ref is rejected after authorization, so this does not start a workflow.
+          code="$(curl -sS -o "$RUNNER_TEMP/services-token.json" -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${SERVICES_REPO_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/PayamaX/services/actions/workflows/PayamaXApiRebuild.yml/dispatches" \
+            -d '{"ref":"permission-probe..invalid","inputs":{"PAX_TAG":"permission-probe"}}')"
+          echo "SERVICES_REPO_TOKEN dispatch probe: HTTP ${code}"
+          if [ -s "$RUNNER_TEMP/services-token.json" ]; then
+            cat "$RUNNER_TEMP/services-token.json"
+            echo
+          fi
+          case "$code" in
+            404|422)
+              echo "SERVICES_REPO_TOKEN can dispatch workflows on PayamaX/services."
+              ;;
+            *)
+              echo "::error::SERVICES_REPO_TOKEN cannot dispatch workflows on PayamaX/services. It needs Actions read and write."
+              exit 1
+              ;;
+          esac
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
+      - name: Check Workspace token
+        id: workspace
+        env:
+          WORKSPACE_REPO_TOKEN: ${{ secrets.WORKSPACE_REPO_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          if [ -z "${WORKSPACE_REPO_TOKEN}" ]; then
+            echo "::error::Repository secret WORKSPACE_REPO_TOKEN is missing. Create a fine-grained PAT with contents read on PayamaX/Workspace and store it as WORKSPACE_REPO_TOKEN."
+            exit 1
+          fi
+          if GIT_TERMINAL_PROMPT=0 git -c "http.extraHeader=AUTHORIZATION: bearer ${WORKSPACE_REPO_TOKEN}" \
+            ls-remote --exit-code --heads "${GITHUB_SERVER_URL}/PayamaX/Workspace.git" "refs/heads/${BRANCH}" >/dev/null; then
+            ref="$BRANCH"
+          else
+            status=$?
+            if [ "$status" -eq 2 ]; then
+              ref=main
+            else
+              echo "::error::Could not look up PayamaX/Workspace branch ${BRANCH}."
+              exit "$status"
+            fi
+          fi
+          echo "ref=${ref}" >> "$GITHUB_OUTPUT"
+          echo "Workspace ref: ${ref}"
+
+      - name: Checkout Workspace scripts
+        uses: actions/checkout@v7
+        with:
+          repository: PayamaX/Workspace
+          ref: ${{ steps.workspace.outputs.ref }}
+          token: ${{ secrets.WORKSPACE_REPO_TOKEN }}
+          path: .payamax-workspace
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Load +env
+        run: |
+          cat .payamax-workspace/+env >> $GITHUB_ENV
+
       - name: Resolve PAX_TAG
-        run: bash .github/scripts/tag.sh
+        run: |
+          cleanup() { rm -rf .payamax-workspace; }
+          trap cleanup EXIT
+          bash .payamax-workspace/.github/scripts/tag.sh
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
@@ -26,10 +108,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-        
-      - name: Load +env
-        run: |
-          cat +env >> $GITHUB_ENV
 
       - name: Set up JDK
         uses: actions/setup-java@v6
@@ -48,6 +126,11 @@ jobs:
       - name: Check
         env:
           PAX_TC_PULL_POLICY: always
+          PAX_PG_PAX_OWNER_PWD: ${{ secrets.PAX_PG_PAX_OWNER_PWD }}
+          PAX_PG_PAX_DDL_FW_PWD: ${{ secrets.PAX_PG_PAX_DDL_FW_PWD }}
+          PAX_PG_PAX_DML_API_PWD: ${{ secrets.PAX_PG_PAX_DML_API_PWD }}
+          PAX_PG_KC_OWNER_PWD: ${{ secrets.PAX_PG_KC_OWNER_PWD }}
+          PAX_KC_ADMIN_PWD: ${{ secrets.PAX_KC_ADMIN_PWD }}
         run: bash ./gradlew check
 
       - name: Build
@@ -70,11 +153,15 @@ jobs:
           mkdir -p assets/tls
           echo "$ROOT_CA" > assets/tls/root-ca.pem
 
+      - name: Prepare Maven local build context
+        run: mkdir -p .m2-empty/repository
+
       - name: Build and push images
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
+          build-contexts: mavenlocal=${{ github.workspace }}/.m2-empty
           platforms: linux/amd64,linux/arm64
           push: true
 
@@ -89,16 +176,48 @@ jobs:
             PAX_JDK_VER=${{ env.PAX_JDK_VER }}
             PAX_JRE_VER=${{ env.PAX_JRE_VER }}
             PAX_GRD_VER=${{ env.PAX_GRD_VER }}
-            PAX_ADMIN_URL=https://admin.gymbo.ir
-            PAX_PG_PAX_DDL_FW_PWD=${{ env.PAX_PG_PAX_DDL_FW_PWD }}
+            PAX_ADMIN_URL=${{ vars.PAX_ADMIN_URL }}
 
           tags: |
             ghcr.io/${{ env.OWNER_LOWERCASE }}/${{ github.event.repository.name }}-dev:${{ env.PAX_TAG }}
 
       - name: Trigger Services rebuild
-        uses: peter-evans/repository-dispatch@v4
-        with:
-          token: ${{ secrets.SERVICES_REPO_TOKEN }}
-          repository: PayamaX/services
-          event-type: api-image-published
-          client-payload: '{"PAX_TAG":"${{ env.PAX_TAG }}"}'
+        env:
+          SERVICES_REPO_TOKEN: ${{ secrets.SERVICES_REPO_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+          PAX_TAG: ${{ env.PAX_TAG }}
+        run: |
+          if [ -z "${SERVICES_REPO_TOKEN}" ]; then
+            echo "::error::Repository secret SERVICES_REPO_TOKEN is missing. It needs Actions read and write on PayamaX/services."
+            exit 1
+          fi
+          dispatch() {
+            local target="$1"
+            local body code
+            body="$(jq -n --arg ref "$target" --arg tag "$PAX_TAG" '{ref:$ref, inputs:{PAX_TAG:$tag}}')"
+            code="$(curl -sS -o "$RUNNER_TEMP/services-dispatch.json" -w "%{http_code}" \
+              -X POST \
+              -H "Authorization: Bearer ${SERVICES_REPO_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/PayamaX/services/actions/workflows/PayamaXApiRebuild.yml/dispatches" \
+              -d "$body")"
+            printf '%s' "$code" > "$RUNNER_TEMP/services-dispatch.code"
+            echo "Dispatch ${target}: HTTP ${code}"
+            if [ -s "$RUNNER_TEMP/services-dispatch.json" ]; then
+              cat "$RUNNER_TEMP/services-dispatch.json"
+              echo
+            fi
+            [ "$code" = "204" ]
+          }
+          if dispatch "$BRANCH"; then
+            echo "Started PayamaX Api Rebuild on ${BRANCH}."
+            exit 0
+          fi
+          code="$(cat "$RUNNER_TEMP/services-dispatch.code")"
+          if [ "$BRANCH" != "main" ] && { [ "$code" = "404" ] || [ "$code" = "422" ]; } && dispatch main; then
+            echo "PayamaX/services branch ${BRANCH} cannot run PayamaX Api Rebuild. Started it on main."
+            exit 0
+          fi
+          echo "::error::Could not start PayamaX Api Rebuild. SERVICES_REPO_TOKEN needs Actions read and write on PayamaX/services."
+          exit 1

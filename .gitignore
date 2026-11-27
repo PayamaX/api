@@ -30,3 +30,7 @@ obj/
 *.DotSettings.user
 node_modules/
 build/
+
+
+
+.secrets/

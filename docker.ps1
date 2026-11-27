@@ -1,7 +1,7 @@
-$envNames = @( & (Join-Path $PSScriptRoot "env.ps1") )
-& (Join-Path $PSScriptRoot "tag.ps1")
+$envNames = @( & (Join-Path (Join-Path (Split-Path -Parent $PSScriptRoot) "scripts") "env.ps1") -Repo $PSScriptRoot )
+$paxTag = & (Join-Path (Join-Path (Split-Path -Parent $PSScriptRoot) "scripts") "tag.ps1") -Repo $PSScriptRoot
 
-echo $env:PAX_TAG
+echo $paxTag
 
 $buildArgs = @()
 foreach ($name in $envNames) {
@@ -13,4 +13,11 @@ foreach ($name in $envNames) {
     $buildArgs += $name
 }
 
-docker build --load @buildArgs -t "ghcr.io/payamax/api-local:$env:PAX_TAG" -f ./Dockerfile ./
+$homeDirectory = if ($env:HOME) { $env:HOME } else { $env:USERPROFILE }
+$mavenLocal = Join-Path $homeDirectory ".m2x"
+$mavenLocalRepository = Join-Path $mavenLocal "repository"
+if (-not (Test-Path -LiteralPath $mavenLocalRepository)) {
+    New-Item -ItemType Directory -Force -Path $mavenLocalRepository | Out-Null
+}
+
+docker build --load @buildArgs --build-context "mavenlocal=$mavenLocal" -t "ghcr.io/payamax/api-local:$paxTag" -f ./Dockerfile ./

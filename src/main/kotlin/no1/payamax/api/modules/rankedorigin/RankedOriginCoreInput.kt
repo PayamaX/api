@@ -5,7 +5,7 @@ import java.util.*
 data class RankedOriginCoreInput(
 	val globalId: UUID?,
 	val origin: String,
-	val rank: Double,
+	val rank: Float,
 	val ownerGlobalId: UUID?,
 	val position: Int,
 	val comment: String?,

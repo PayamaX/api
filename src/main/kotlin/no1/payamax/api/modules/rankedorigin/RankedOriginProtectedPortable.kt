@@ -6,7 +6,7 @@ data class RankedOriginProtectedPortable(
 	val localId: Long,
 	val globalId: UUID,
 	val origin: String,
-	val rank: Double,
+	val rank: Float,
 	val ownerGlobalId: UUID?,
 	val position: Int,
 	val comment: String?,
