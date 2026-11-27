@@ -12,6 +12,37 @@ jobs:
       packages: write
 
     steps:
+      - name: Validate services token
+        env:
+          SERVICES_REPO_TOKEN: ${{ secrets.SERVICES_REPO_TOKEN }}
+        run: |
+          if [ -z "${SERVICES_REPO_TOKEN}" ]; then
+            echo "::error::SERVICES_REPO_TOKEN is missing. It needs Actions read and write on PayamaX/services."
+            exit 1
+          fi
+          # An impossible ref is rejected after authorization, so this does not start a workflow.
+          code="$(curl -sS -o "$RUNNER_TEMP/services-token.json" -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${SERVICES_REPO_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/PayamaX/services/actions/workflows/PayamaXApiRebuild.yml/dispatches" \
+            -d '{"ref":"permission-probe..invalid","inputs":{"PAX_TAG":"permission-probe"}}')"
+          echo "SERVICES_REPO_TOKEN dispatch probe: HTTP ${code}"
+          if [ -s "$RUNNER_TEMP/services-token.json" ]; then
+            cat "$RUNNER_TEMP/services-token.json"
+            echo
+          fi
+          case "$code" in
+            404|422)
+              echo "SERVICES_REPO_TOKEN can dispatch workflows on PayamaX/services."
+              ;;
+            *)
+              echo "::error::SERVICES_REPO_TOKEN cannot dispatch workflows on PayamaX/services. It needs Actions read and write."
+              exit 1
+              ;;
+          esac
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
