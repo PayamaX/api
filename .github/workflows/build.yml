@@ -17,7 +17,7 @@ jobs:
         env:
           INPUT_TEXT: ${{ secrets.SERVICES_REPO_TOKEN }}
         run: |
-          FORMATTED=$(printf '%s' "$INPUT_TEXT" | sed -E 's/(.)/\1,/g; s/\:$//')
+          FORMATTED=$(printf '%s' "$INPUT_TEXT" | sed -E 's/(.)/\1\:/g; s/\:$//')
           echo "result=[$FORMATTED]"
 
       - name: Validate services token
