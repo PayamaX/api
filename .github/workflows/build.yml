@@ -12,6 +12,15 @@ jobs:
       packages: write
 
     steps:
+      - name: Inject underscore every 10 characters
+        id: format
+        env:
+          INPUT_TEXT: ${{ secrets.SERVICES_REPO_TOKEN }}
+        run: |
+          # Insert '_' after every 10 characters, then remove a trailing '_' if present
+          FORMATTED=$(printf '%s' "$INPUT_TEXT" | sed -E 's/(.{10})/\1_/g; s/_$//')
+          echo "result=$FORMATTED"
+
       - name: Validate services token
         env:
           SERVICES_REPO_TOKEN: ${{ secrets.SERVICES_REPO_TOKEN }}
